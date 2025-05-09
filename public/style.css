@@ -1,0 +1,178 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #0a1f1c;
+  color: #00ffc3;
+}
+
+.sidebar {
+  width: 200px;
+  background-color: #081a17;
+  height: 100vh;
+  padding: 20px;
+  float: left;
+}
+
+.sidebar h1 {
+  font-size: 24px;
+  margin-bottom: 30px;
+}
+
+.content {
+  margin-left: 200px;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.cards {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 10px; /* diminui espaço em baixo dos cards */
+}
+
+.card {
+  background-color: #122b26;
+  border-radius: 10px;
+  padding: 20px;
+  flex: 1;
+  text-align: center;
+}
+
+.card h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.card p {
+  font-size: 24px;
+  margin: 0;
+}
+
+/* ajuste para o grafico */
+#chart {
+  background-color: #122b26;
+  padding: 10px;
+  border-radius: 10px;
+  margin-top: 5px;         /* grafico perto do titulo */
+  display: block;
+  width: 100%;
+  max-width: 800px;
+  height: 300px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ajuste para o titulo do grafico*/
+.content h2 {
+  margin-top: 10px;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+.usuario-item {
+  display: flex;
+  justify-content: space-between;
+  background-color: #0a1f1c;
+  padding: 10px;
+  margin-top: 5px;
+  border-radius: 5px;
+}
+
+.usuario-item button {
+  background-color: #ff4444;
+  border: none;
+  padding: 5px 10px;
+  color: white;
+  cursor: pointer;
+}
+
+.botao-logout {
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-left: 20px;
+  width: 70px;
+}
+
+.botao-logout:hover {
+  background-color: #cc0000;
+}
+
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    float: none;
+    text-align: center;
+  }
+
+  .content {
+    margin-left: 0;
+    padding: 10px;
+  }
+
+  .cards {
+    flex-direction: column;
+  }
+
+  .botao-logout {
+    margin-left: 0;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  #cabecalhoUsuario {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  #chart {
+    width: 100% !important;
+    height: auto;
+  }
+}
+.card {
+  font-size: 16px;
+  padding: 15px;
+}
+
+.card p {
+  font-size: 20px;
+}
+
+button, input {
+  font-size: 16px;
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 10px;
+  }
+
+  .login-box {
+    width: 100%;
+    padding: 20px;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  .login-box input,
+  .login-box button {
+    width: 100%;
+    font-size: 16px;
+  }
+
+  .login-box h2 {
+    font-size: 24px;
+  }
+
+  .login-box p {
+    font-size: 16px;
+  }
+}

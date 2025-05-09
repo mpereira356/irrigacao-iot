@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - SmartFarm</title>
+  <link rel="stylesheet" href="login.css">
+  <style>
+    .hidden { display: none; }
+    .section { background: #122b26; padding: 20px; border-radius: 10px; max-width: 400px; margin: auto; color: #00ffc3; }
+    button { width: 100%; padding: 10px; margin: 5px 0; }
+  </style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+</head>
+<body>
+
+  <div id="loginBox" class="section">
+    <h2>SmartFarm - Dashboard</h2>
+    <p>Login do Usuário</p>
+    <input type="text" id="user" placeholder="Login">
+
+    <input type="password" id="pass" placeholder="Senha" style="text-indent: 10px;">
+    <button onclick="login()">Entrar</button>
+  </div>
+
+  <!-- PAINEL DE USUÁRIO LOGADO -->
+  <div id="painelUsuario" class="section hidden">
+    <h2>Painel Admin</h2>
+    <p id="mensagemLogin"></p>
+
+
+    <!-- BOTÃO DE SAIR -->
+    <button onclick="logout()" style="margin-top: 20px;">Sair</button>
+  </div>
+
+  <script>
+ window.onload = () => {
+  const dados = localStorage.getItem('usuarioLogado');
+  if (dados) {
+    const user = JSON.parse(dados);
+    document.getElementById('loginBox').classList.add('hidden');
+    document.getElementById('painelUsuario').classList.remove('hidden');
+    document.getElementById('mensagemLogin').innerText = `Bem-vindo(a), ${user.nome}!`;
+
+    // NOVO: valida com backend se é admin
+    fetch(`/usuarios?login=${encodeURIComponent(user.usuario)}`)
+      .then(res => res.json())
+      .then(resp => {
+        if (resp.success && resp.usuarios.length > 0) {
+          const dadosBanco = resp.usuarios[0];
+          const isAdmin = dadosBanco.usuario === 'admin';
+
+          if (isAdmin && !document.getElementById('adminArea')) {
+            montarPainelAdmin(); // aqui é a função que monta os campos de admin
+          }
+        }
+      });
+  }
+};
+
+    function montarPainelAdmin() {
+  const adminDiv = document.createElement('div');
+  adminDiv.id = 'adminArea';
+  adminDiv.innerHTML = `
+
+    <hr>
+    <p id="usuariosOnline">Usuários online: carregando...</p>
+    <h3>Cadastro</h3>
+    <input type="text" id="nomeUsuario" placeholder="Nome do novo usuário">
+    <input type="email" id="emailUsuario" placeholder="E-mail do novo usuário">
+    <input type="text" id="novoUsuario" placeholder="Login do novo usuário">
+    <input type="password" id="novaSenha" placeholder="Senha">
+
+
+    <button onclick="criarUsuario()">Criar novo usuário</button>
+    <p id="mensagem"></p>
+
+    <hr>
+    <h3>Alterar Usuário</h3>
+    <h6>* para mostrar todos</h6>
+    <input type="text" id="usuarioBusca" placeholder="Login do usuário a alterar" oninput="filtrarUsuarios()" autocomplete="off">
+    <div id="listaUsuarios"></div>
+    <div id="formAlteracao" style="margin-top: 10px; display: none;">
+      <input type="text" id="novoNome" placeholder="Novo nome">
+      <input type="text" id="novoLogin" placeholder="Novo login">
+      <input type="password" id="novaSenhaAlterar" placeholder="Nova senha">
+      <button onclick="atualizarUsuario()">Salvar alterações</button>
+      <button onclick="excluirUsuarioPorLogin()" style="margin-top: 5px; background-color: #ff4444; width: 100%; color: white;">Excluir usuário</button>
+      <p id="msgAlteracao"></p>
+      
+    </div>
+  `;
+  document.getElementById('painelUsuario').appendChild(adminDiv);
+  setInterval(mostrarUsuariosOnline, 3000);
+}
+
+    function login() {
+      const user = document.getElementById('user').value;
+      const pass = document.getElementById('pass').value;
+
+      fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario: user, senha: pass })
+
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+              localStorage.setItem('usuarioLogado', JSON.stringify(data));
+            if (data.isAdmin) {
+              document.getElementById('loginBox').classList.add('hidden');
+              document.getElementById('painelUsuario').classList.remove('hidden');
+              document.getElementById('mensagemLogin').innerText = `Bem-vindo(a), ${data.nome}!`;
+
+              if (!document.getElementById('adminArea')) {
+                const adminDiv = document.createElement('div');
+                adminDiv.id = 'adminArea';
+                adminDiv.innerHTML = `
+                  <hr>
+                  <h3>Cadastro</h3>
+                  
+
+                  <input type="text" id="nomeUsuario" placeholder="Nome do novo usuário">
+                  <input type="email" id="emailUsuario" placeholder="E-mail do novo usuário">
+                  <input type="text" id="novoUsuario" placeholder="Login do novo usuário">
+                  <input type="password" id="novaSenha" placeholder="Senha">
+                  <button onclick="criarUsuario()">Criar novo usuário</button>
+                  <p id="mensagem"></p>
+
+                  <hr>
+
+                  <h3>Alterar Usuário</h3>
+                  <h6>* para mostrar todos</h6>
+                  <input type="text" id="usuarioBusca" placeholder="Login do usuário a alterar" oninput="filtrarUsuarios()" autocomplete="off">
+                  <div id="listaUsuarios"></div>
+                  <div id="formAlteracao" style="margin-top: 10px; display: none;">
+                    <input type="text" id="novoNome" placeholder="Novo nome">
+                    <input type="text" id="novoEmail" placeholder="Novo email">
+                    <input type="text" id="novoLogin" placeholder="Novo login">
+                    <input type="password" id="novaSenhaAlterar" placeholder="Nova senha">
+                    <button onclick="atualizarUsuario()">Salvar alterações</button>
+                    <button onclick="excluirUsuarioPorLogin()" style="margin-top: 5px; background-color: #ff4444; color: white; width:100%">Excluir usuário</button>
+                    <p id="msgAlteracao"></p>
+                  </div>
+                `;
+                document.getElementById('painelUsuario').appendChild(adminDiv);
+              }
+            } else {
+              // ✅ Redireciona usuário comum para o dashboard
+              window.location.href = `dash.html?user=${encodeURIComponent(data.usuario)}`;
+            }
+          } else {
+            alert('Usuário ou senha inválidos!');
+          }
+        })
+        .catch(err => console.error('Erro no login:', err));
+    }
+
+function criarUsuario() {
+  const nome = document.getElementById('nomeUsuario').value.trim();
+  const email = document.getElementById('emailUsuario').value.trim();
+  const usuario = document.getElementById('novoUsuario').value.trim();
+  const senha = document.getElementById('novaSenha').value.trim();
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const loginRegex = /^[a-zA-Z0-9._]{3,30}$/;
+  const nomeRegex = /^[A-Za-zÀ-ú\s]{2,100}$/;
+
+  if (!nomeRegex.test(nome)) return alert('Nome deve ter entre 2 e 100 letras, apenas letras e espaços.');
+  if (!emailRegex.test(email) || email.length > 150) return alert('Digite um e-mail válido com até 150 caracteres, verifique "." e "@".');
+  if (!loginRegex.test(usuario)) return alert('Login deve conter de 3 a 30 caracteres (letras, números, ponto ou underline / NÃO PODE TER ESPAÇO).');
+  if (senha.length < 6 || senha.length > 100) return alert('A senha deve ter entre 6 e 100 caracteres.');
+
+  fetch('/usuarios', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nome, email, usuario, senha })
+  })
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('mensagem').innerText = data.message;
+      carregarUsuarios();
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById('mensagem').innerText = 'Erro ao criar usuário.';
+    });
+}
+
+function logout() {
+  localStorage.removeItem('usuarioLogado');
+  location.reload();
+}
+
+    function carregarUsuarios() {
+  fetch('/usuarios/busca?q=')
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        exibirUsuarios(data.usuarios);
+      }
+    });
+}
+
+
+
+
+function buscarUsuarioParaEditar() {
+  const login = document.getElementById('usuarioBusca').value.trim();
+  if (!login) return alert('Digite o login para buscar');
+
+  fetch(`/usuarios/busca?q=${encodeURIComponent(login)}`)
+    .then(res => res.json())
+    .then(data => {
+      const usuario = data.usuarios.find(u => u.usuario === login);
+      if (usuario) {
+        document.getElementById('formAlteracao').style.display = 'block';
+        document.getElementById('novoNome').value = usuario.nome;
+        document.getElementById('novoLogin').value = usuario.usuario;
+        document.getElementById('novaSenhaAlterar').value = '';
+        document.getElementById('novoEmail').value = usuario.email;
+      } else {
+        alert('Usuário não encontrado');
+      }
+    });
+}
+
+function atualizarUsuario() {
+  const loginAntigo = document.getElementById('usuarioBusca').value.trim();
+  const nome = document.getElementById('novoNome').value.trim();
+  const email = document.getElementById('novoEmail').value.trim();
+  const usuario = document.getElementById('novoLogin').value.trim();
+  const senha = document.getElementById('novaSenhaAlterar').value.trim();
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const loginRegex = /^[a-zA-Z0-9._]{3,30}$/;
+  const nomeRegex = /^[A-Za-zÀ-ú\s]{2,100}$/;
+
+  if (!nomeRegex.test(nome)) return alert('Nome deve ter entre 2 e 100 letras, apenas letras e espaços.');
+  if (!emailRegex.test(email) || email.length > 150) return alert('Digite um e-mail válido com até 150 caracteres.');
+  if (!loginRegex.test(usuario)) return alert('Login deve conter de 3 a 30 caracteres (letras, números, ponto ou underline).');
+  if (senha && (senha.length < 6 || senha.length > 100)) return alert('A nova senha deve ter entre 6 e 100 caracteres.');
+
+  fetch(`/usuarios/${encodeURIComponent(loginAntigo)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nome, email, usuario, senha })
+  })
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('msgAlteracao').innerText = data.message;
+
+      // 🟢 Limpa os campos e esconde o formulário
+      document.getElementById('formAlteracao').style.display = 'none';
+      document.getElementById('novoNome').value = '';
+      document.getElementById('novoEmail').value = '';
+      document.getElementById('novoLogin').value = '';
+      document.getElementById('novaSenhaAlterar').value = '';
+      document.getElementById('usuarioBusca').value = '';
+
+      // 🟢 Atualiza a lista em tempo real
+      filtrarUsuarios();
+    });
+}
+
+function excluirUsuarioPorLogin() {
+  if (!idSelecionado) return alert('Nenhum usuário selecionado.');
+
+  if (!confirm(`Tem certeza que deseja excluir este usuário?`)) return;
+
+  fetch(`/usuarios/${idSelecionado}`, {
+    method: 'DELETE'
+  })
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('msgAlteracao').innerText = data.message;
+      document.getElementById('formAlteracao').style.display = 'none';
+      document.getElementById('novoNome').value = '';
+      document.getElementById('novoEmail').value = '';
+      document.getElementById('novoLogin').value = '';
+      document.getElementById('novaSenhaAlterar').value = '';
+      document.getElementById('usuarioBusca').value = '';
+      idSelecionado = null; // limpa id
+      filtrarUsuarios();
+    });
+}
+
+function filtrarUsuarios() {
+  const filtro = document.getElementById('usuarioBusca').value.trim();
+  const lista = document.getElementById('listaUsuarios');
+
+  if (filtro === '') {
+    lista.innerHTML = '';
+    document.getElementById('formAlteracao').style.display = 'none';
+    // Limpa campos do formulário
+    document.getElementById('novoNome').value = '';
+    document.getElementById('novoLogin').value = '';
+    document.getElementById('novaSenhaAlterar').value = '';
+    return;
+  }
+
+  const query = filtro === '*' ? '' : filtro;
+
+  fetch(`/usuarios/busca?q=${encodeURIComponent(query)}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        const container = document.getElementById('listaUsuarios');
+        container.innerHTML = '';
+
+        data.usuarios.forEach(user => {
+          const div = document.createElement('div');
+          div.className = 'usuario-item';
+          div.style = 'display:flex; justify-content:space-between; margin-top:5px; background:#0a1f1c; padding:10px; border-radius:5px; color:#00ffc3';
+
+          div.innerHTML = `
+            <span><strong>${user.usuario}</strong> - ${user.nome}</span>
+            <button onclick="preencherFormularioEdicao('${user.usuario}', ${user.id})" style="width: 100px;">Editar</button>
+
+          `;
+
+          container.appendChild(div);
+        });
+      }
+    });
+}
+
+let idSelecionado = null;
+
+function preencherFormularioEdicao(login, id) {
+  document.getElementById('usuarioBusca').value = login;
+  idSelecionado = id; // ✅ guarda o ID do usuário
+  buscarUsuarioParaEditar();
+}
+
+
+function mostrarUsuariosOnline() {
+  fetch('/online')
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('usuariosOnline').innerText = `Usuários online: ${data.online}`;
+    })
+    .catch(() => {
+      document.getElementById('usuariosOnline').innerText = 'Usuários online: erro';
+    });
+}
+  </script>
+</body>
+</html>

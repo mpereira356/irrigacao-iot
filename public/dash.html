@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartFarm - Irrigação Inteligente</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="sidebar">
+    <h1>SmartFarm</h1>
+    <p>Irrigação Inteligente</p>
+
+
+  </div>
+ <div class="content">
+  <div id="cabecalhoUsuario" style="display: flex; justify-content: space-between; align-items: center; margin: 20px;">
+    <h2 id="boasVindas" style="margin: 0;"></h2>
+    <button class="botao-logout" onclick="logout()">Sair</button>
+  </div>
+  
+
+  <div class="cards">
+    <div class="card">
+      <h2>Umidade do Solo</h2>
+      <p>32%</p>
+    </div>
+      <div class="card">
+    <h2>Bateria</h2>
+    <p id="bateriaValor">--%</p>
+  </div>
+    <div class="card">
+      <h2>Clima Atual</h2>
+      <p>☀️ Sol</p>
+    </div>
+    <div class="card">
+      <h2>Previsão de Chuva</h2>
+      <p>70% nas próximas 12h</p>
+    </div>
+  </div>
+
+  <h2>Última Irrigação</h2>
+  <canvas id="chart" width="600" height="300"></canvas>
+</div>
+  <script>
+    const ctx = document.getElementById('chart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['00h', '04h', '08h', '12h', '16h', '20h', '24h'],
+        datasets: [{
+          label: 'Umidade (%)',
+          data: [22, 20, 19, 25, 23, 28, 30],
+          borderColor: '#00ffc3',
+          backgroundColor: 'transparent',
+          tension: 0.3
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        },
+        plugins: {
+          legend: {
+            labels: {
+              color: '#00ffc3'
+            }
+          }
+        }
+      }
+    });
+
+// Pegar usuário da URL
+const urlParams = new URLSearchParams(window.location.search);
+const login = urlParams.get('user');
+
+// Buscar nome no backend e exibir
+fetch(`/usuarios?login=${encodeURIComponent(login)}`)
+
+  .then(res => res.json())
+  .then(data => {
+    if (data.success && data.usuarios.length > 0) {
+      const user = data.usuarios.find(u => u.usuario === login);
+      if (user) {
+        document.getElementById('boasVindas').innerHTML = `Bem vindo <strong>${user.nome}</strong>`;
+
+      }
+      
+    } else {
+      document.getElementById('boasVindas').innerText = `Usuário não encontrado.`;
+    }
+  })
+  .catch(() => {
+    document.getElementById('boasVindas').innerText = `Erro ao buscar dados do usuário.`;
+  });
+
+function logout() {
+  localStorage.removeItem('usuarioLogado'); // 🔁 limpa login salvo
+  window.location.href = 'login.html';      // 🔁 redireciona para login
+}
+
+  </script>
+</body>
+</html>
