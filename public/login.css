@@ -1,99 +1,204 @@
-body {
-    background-color: #0a1f1c;
-    color: #00ffc3;
-    font-family: Arial, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: top;
-    height: 100vh;
-    margin: 0;
-  }
-  
+/* ===== Base ===== */
+:root{
+  --bg:#0a1f1c;
+  --panel:#0f2a25;
+  --panel-2:#122b26;
+  --text:#00ffc3;
+  --ink:#0a1f1c;
+  --muted:#76ffe2;
+  --edge:rgba(0,255,195,.15);
+}
+
+*{box-sizing:border-box}
+
+html,body{
+  height:100%;
+}
+
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  padding:32px 16px;
+}
+
+/* ===== Contêiner principal ===== */
+.shell{
+  width:100%;
+  max-width:1100px;
+}
+
+/* Caixas padrão (login ou painéis) */
+.section{
+  background: var(--panel-2);
+  border:1px solid var(--edge);
+  border-radius:16px;
+  padding:20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+ 
+}
+
+/* ===== Tipografia ===== */
+h1{ font-size:28px; margin:0 0 4px }
+h2{ font-size:22px; margin:0 0 12px }
+h3{ font-size:18px; margin:0 0 12px }
+p{ margin:6px 0 14px }
+
+/* ===== Campos / botões ===== */
+input, select{
+  width:100%;
+  padding:12px 10px;
+  margin:8px 0;
+  border:1px solid var(--edge);
+  background:#0a1f1c;
+  color:var(--text);
+  border-radius:10px;
+  outline:none;
+}
+
+button{
+  background-color: #00ffc3;
+  color: var(--ink);
+  border: none;
+  padding: 12px 14px;
+  width: 100%;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: transform .06s ease, filter .2s ease, box-shadow .2s ease;
+  box-shadow: 0 6px 18px rgba(0,255,195,.25);
+}
+button:hover{ filter: brightness(90%); }
+button:active{ transform: translateY(1px); }
+
+/* ===== LISTAS ===== */
+.usuario-item{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  background-color:#0a1f1c;
+  padding:10px;
+  margin-top:6px;
+  border-radius:8px;
+  border:1px solid var(--edge);
+}
+.usuario-item button{
+  background-color:#ff4444;
+  color:#fff;
+  padding:8px 10px;
+  width:auto;
+}
+
+/* ===== Painel Admin (grid + cards) ===== */
+.painel-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:16px;
+}
+
+.admin-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  gap:16px;
+}
+
+.card{
+  background: var(--panel);
+  border:1px solid var(--edge);
+  border-radius:16px;
+  padding:16px;
+}
+
+.card h3{
+  margin-top:0;
+}
+
+.help{
+  font-size:12px;
+  opacity:.85;
+  margin-top:-6px;
+  margin-bottom:8px;
+}
+
+/* Área de logs rolável */
+#logsArea{
+  max-height:260px;
+  overflow-y:auto;
+  background:#0a1f1c;
+  padding:10px;
+  border-radius:10px;
+  border:1px solid var(--edge);
+}
+.log-item{
+  border-bottom:1px dashed var(--edge);
+  padding:8px 2px;
+  font-size:13px;
+}
+
+/* Barra de filtros */
+.filtros{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin:8px 0 10px;
+}
+.filtros input,.filtros select,.filtros button{ flex:1; min-width:140px }
+
+/* ===== Responsivo ===== */
+@media (max-width: 840px){
+  .admin-grid{ grid-template-columns: 1fr; }
+  .painel-head{ flex-direction:column; align-items:stretch }
+}
+
+/* ===== Heranças antigas (mantidas p/ compatibilidade) ===== */
 .login-box {
   width: 100%;
-  max-width: 320px;
-  height: 100vh;
+  max-width: 800px;     /* largura máxima da caixa */
+  margin: auto;         /* centraliza horizontal */
+  margin-top: 8%;       /* joga um pouco pra baixo */
+  background: #0f2a25;  /* cor de fundo da caixa */
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+}
+
+
+
+#listaUsuarios {
+  max-height: 400px;   /* limite da altura da lista */
+  overflow-y: auto;    /* rolagem interna */
+  padding-right: 5px;  /* espaço para o scroll */
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  height: calc(100vh - 150px); /* usa quase toda a altura da tela */
+}
+
+.card {
+  overflow-y: auto; /* se o conteúdo de um card passar do limite, ativa scroll */
+}
+
+/* só a section do login */
+.login-section {
+   /* largura máxima do box de login */
+  width: 700px;
   margin: auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
+  margin-top: 8%;     /* joga um pouco pra baixo */
+}
+#mensagem,
+#msgAlteracao {
+  margin-top: 12px;   /* cria espaço acima da mensagem */
+  display: block;     /* garante que fica em linha própria */
+  font-size: 14px;
+  color: #ccc;        /* ou a cor que você quiser */
 }
 
-  input {
-    width: 100%;
-    padding: 10px 2px 10px 0px;
-    margin: 10px 0;
-    border: none;
-    border-radius: 5px;
-    margin-right: 1px;
-    text-indent: 10px;
-  }
-  
-  button {
-    background-color: #00ffc3;
-    color: #0a1f1c;
-    border: none;
-    padding: 10px;
-    width: 100%;
-    font-weight: bold;
-    cursor: pointer;
-    border-radius: 5px;
-  }
-  
-  .usuario-item {
-    display: flex;
-    justify-content: space-between;
-    background-color: #0a1f1c;
-    padding: 10px;
-    margin-top: 5px;
-    border-radius: 5px;
-  }
-  .usuario-item button {
-    background-color: #ff4444;
-    border: none;
-    padding: 5px 10px;
-    color: white;
-    cursor: pointer;
-  }
-
-  
-  button {
-    padding: 6px 12px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: filter 0.2s ease;
-  }
-  
-  button:hover {
-    filter: brightness(85%);
-  }
-
- @media (max-width: 480px) {
-  body {
-    padding: 10px;
-  }
-
-  .login-box {
-    width: 100%;
-    padding: 20px;
-    box-shadow: none;
-    border-radius: 0;
-  }
-
-  .login-box input,
-  .login-box button {
-    width: 100%;
-    font-size: 16px;
-  }
-
-  .login-box h2 {
-    font-size: 24px;
-  }
-
-  .login-box p {
-    font-size: 16px;
-  }
-}
