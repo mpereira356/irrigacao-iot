@@ -1,605 +1,529 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SmartFarm - Irrigação Inteligente</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+  <meta charset="UTF-8" />
+  <title>Login - SmartFarm</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Se preferir usar o style.css geral, troque o arquivo abaixo -->
+  <link rel="stylesheet" href="login.css" />
   <style>
-    /* ====== Modal ====== */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      inset: 0;
-      background: rgba(0,0,0,0.6);
-    }
-    .modal-content {
-      background: #122b26;
-      color: #fff;
-      margin: 6% auto;
-      padding: 20px;
-      border-radius: 10px;
-      width: 420px;
-      max-width: calc(100% - 32px);
-      position: relative;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
-    }
-    .modal-content h2 { margin-top: 0; }
-    .modal-content .close {
-      position: absolute;
-      top: 10px; right: 14px;
-      font-size: 22px;
-      cursor: pointer;
-      opacity: .8;
-    }
-    .modal .form-group { margin-bottom: 14px; }
-    .modal input[type="text"],
-    .modal input[type="email"],
-    .modal input[type="password"] {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #2a4a42;
-      border-radius: 6px;
-      background: #0a1f1a;
-      color: #fff;
-      font-size: 14px;
-      box-sizing: border-box;
-    }
-    .modal .btn {
-      background: #00ffc3;
-      color: #0a1f1a;
-      border: 0;
-      border-radius: 6px;
-      padding: 10px 16px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .modal .btn:hover { filter: brightness(.95); }
+    .hidden{display:none}
 
-    .modal .alert {
-      padding: 10px 12px;
-      border-radius: 6px;
-      margin-bottom: 14px;
-      font-size: 14px;
-      border: 1px solid transparent;
+    /* ===== melhorias pontuais para o login ===== */
+    .brand{
+      display:flex; align-items:center; gap:12px; margin-bottom:10px;
     }
-    .modal .alert-success { background: #00ffc333; border-color: #00ffc3; color: #00ffc3; }
-    .modal .alert-error   { background: #ff444433; border-color: #ff4444; color: #ff4444; }
-
-    .divider-h {
-      height: 1px;
-      background: #2a4a42;
-      margin: 18px 0;
+    .brand-logo{
+      width:40px; height:40px; object-fit:contain; border-radius:8px;
+      background:#0a1f1c; display:block;
     }
+    .brand-title{
+      margin:0; font-size:26px; line-height:1.1;
+    }
+    .brand-sub{
+      margin:0; margin-top:2px; font-size:13px; opacity:.8;
+    }
+    .input-wrap{
+      position:relative;
+    }
+    .toggle-pass{
+      position:absolute; right:8px; top:50%; transform:translateY(-50%);
+      background:transparent; border:0; cursor:pointer; padding:6px;
+      border-radius:8px; line-height:0; color:#9fffe9;
+    }
+    .toggle-pass:hover{ background:rgba(0,255,195,.08) }
+    .toggle-pass svg{ width:18px; height:18px }
   </style>
 </head>
 <body>
-  <div class="sidebar">
-    <h1>SmartFarm</h1>
-    <p>Irrigação Inteligente</p>
-    
-    <div id="listaDispositivos" style="margin-top: 20px;">
-      <p style="font-size: 12px; opacity: 0.7;">Carregando dispositivos...</p>
-    </div>
-  </div>
-  
-  <div class="content">
-    <div id="cabecalhoUsuario" style="display: flex; justify-content: space-between; align-items: center; margin: 20px;">
-      <h2 id="boasVindas" style="margin: 0;"></h2>
-      <div style="display: flex; gap: 10px;">
-        <button id="btnAbrirConfig" class="botao-config" style="background-color: #2a4a42; color: #fff; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s;">⚙️ Configurações</button>
-        <button class="botao-logout" onclick="logout()">Sair</button>
-      </div>
-    </div>
-    
-    <div id="mensagemSemDispositivo" style="text-align: center; margin-top: 50px; display: none;">
-      <h2>Nenhum dispositivo encontrado</h2>
-      <p>Entre em contato com o administrador para vincular um dispositivo ESP32 à sua conta.</p>
-    </div>
+  <div class="shell">
+    <!-- LOGIN -->
+    <div id="loginBox" class="section login-section">
+      <div class="brand">
 
-    <div id="conteudoDispositivo">
-      <div id="infoDispositivo" style="margin-bottom: 20px; padding: 15px; background-color: #122b26; border-radius: 10px;">
-        <h3 id="nomeDispositivo" style="margin: 0 0 5px 0;">Carregando...</h3>
-        <p id="serialDispositivo" style="margin: 0; font-size: 12px; opacity: 0.7;">Serial: ---</p>
-      </div>
-
-      <div class="cards">
-        <div class="card">
-          <h2>Umidade do Solo</h2>
-          <p id="umidadeSolo">--%</p>
-          <small id="umidadeSoloBruto" style="font-size: 11px; opacity: 0.7;">Valor bruto: ---</small>
-        </div>
-        <div class="card">
-          <h2>Umidade do Ar</h2>
-          <p id="umidadeAr">--%</p>
-        </div>
-        <div class="card">
-          <h2>Temperatura</h2>
-          <p id="temperatura">--°C</p>
-        </div>
-        <div class="card">
-          <h2>Cultura</h2>
-          <p id="culturaNome">---</p>
-        </div>
-        <div class="card">
-          <h2>Água Necessária</h2>
-          <p id="aguaNecessaria">-- L/m²</p>
-        </div>
-        <div class="card">
-          <h2>Frequência Irrigação</h2>
-          <p id="frequenciaIrrigacao">-- dias</p>
-        </div>
-        <div class="card">
-          <h2>Última Atualização</h2>
-          <p id="ultimaAtualizacao">---</p>
-        </div>
-        <div class="card">
-          <h2>Status</h2>
-          <p id="statusDispositivo">🟢 Online</p>
-        </div>
-        <div class="card">
-          <h2>Próxima Irrigação</h2>
-          <p id="proximaIrrigacao">---</p>
-          <small id="diasRestantes" style="font-size: 11px; opacity: 0.7;">---</small>
-        </div>
-        <div class="card">
-          <h2>Quantidade de Água</h2>
-          <p id="quantidadeAgua">--- L</p>
-          <small id="areaInfo" style="font-size: 11px; opacity: 0.7;">Área: --- m²</small>
+        <img class="brand-logo" src="logosmart.png" alt="SmartFarm">
+        <div>
+          <h1 class="brand-title">SmartFarm</h1>
+          <p class="brand-sub">Login do Usuário</p>
         </div>
       </div>
 
-      <h2>Histórico de Umidade do Solo (Últimas 24h)</h2>
-      <canvas id="chart" width="600" height="300"></canvas>
+      <input type="text" id="user" placeholder="Login" autocomplete="username" />
+
+      <div class="input-wrap">
+        <input type="password" id="pass" placeholder="Senha" autocomplete="current-password" />
+        <button type="button" id="btnTogglePass" class="toggle-pass" aria-label="Mostrar senha" title="Mostrar/Ocultar senha">
+          <!-- ícone olho -->
+          <div class="input-wrapper">
+  <input type="password" id="senha" placeholder="Senha" />
+          <svg id="iconEye" xmlns="http://www.w3.org/2000/svg" 
+              viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 5c-5 0-9 3.5-10 7 1 3.5 5 7 10 7s9-3.5 10-7c-1-3.5-5-7-10-7zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2.5A2.5 2.5 0 1 0 12 8a2.5 2.5 0 0 0 0 5.5z"/>
+          </svg>
+</div>
+        </button>
+      </div>
+
+      <button onclick="login()">Entrar</button>
+      <span id="mensagem" role="alert"></span>
+    </div>
+
+    <!-- PAINEL (aparece após login) -->
+    <div id="painelUsuario" class="section hidden">
+      <div class="painel-head">
+        <div>
+          <h2>Painel Admin</h2>
+          <p id="mensagemLogin"></p>
+        </div>
+        <div style="min-width:220px">
+          <button onclick="logout()">Sair</button>
+        </div>
+      </div>
+      <div id="adminArea" class="admin-grid"></div>
     </div>
   </div>
 
-  <!-- ================= Modal Configurações ================= -->
-  <div id="modalConfig" class="modal">
-    <div class="modal-content">
-      <span class="close" id="fecharModal">&times;</span>
-      <h2>⚙️ Configurações da Conta</h2>
+<script>
+/* =======================
+   Verificar sessão
+======================= */
+async function verificarSessaoExistente() {
+  try {
+    const response = await fetch('/session', { credentials: 'include' });
+    const data = await response.json();
+    if (data.authenticated) window.location.href = 'dash.html';
+  } catch (error) {
+    console.log('Não autenticado, mostrar login');
+  }
+}
+verificarSessaoExistente();
 
-      <!-- NOVO: ID e Usuário (somente leitura) -->
-      <div class="form-group">
-        <label for="cfgUserId">ID do Usuário</label>
-        <input type="text" id="cfgUserId" disabled>
-      </div>
-      <div class="form-group">
-        <label for="cfgUsuario">Usuário (login)</label>
-        <input type="text" id="cfgUsuario" disabled>
-      </div>
+/* =======================
+   Mostrar/Ocultar Senha
+======================= */
+(function(){
+  const input = document.getElementById('pass');
+  const btn   = document.getElementById('btnTogglePass');
+  const icon  = document.getElementById('iconEye');
 
-      <div id="alertConfig"></div>
+  if (!btn || !input) return;
 
-      <!-- Editar Perfil -->
-      <form id="formPerfil">
-        <div class="form-group">
-          <label for="cfgNome">Nome Completo</label>
-          <input type="text" id="cfgNome" required>
-        </div>
+  btn.addEventListener('click', () => {
+    const isPwd = input.type === 'password';
+    input.type = isPwd ? 'text' : 'password';
+    btn.setAttribute('aria-label', isPwd ? 'Ocultar senha' : 'Mostrar senha');
 
-        <div class="form-group">
-          <label for="cfgEmail">Email</label>
-          <input type="email" id="cfgEmail" required>
-        </div>
+    // alternar ícone (olho aberto/fechado)
+    icon.innerHTML = isPwd
+      ? '<path d="M2 12c1.2 3.7 5.3 7 10 7 2.1 0 4-.6 5.7-1.7l1.7 1.7 1.4-1.4-18-18-1.4 1.4 3.1 3.1C3.2 6.9 1.9 9.2 2 12zm8.3-6 2.2 2.2c.5.2 1 .5 1.4.9a4 4 0 0 1-5.6 5.6c-.4-.4-.7-.9-.9-1.4L5.2 10C6.2 7.9 8.1 6.5 10.3 6zM12 19c-5 0-9-3.5-10-7 .4-1.5 1.3-2.9 2.5-4l2.3 2.3a6 6 0 0 0 7 7l2.2 2.2c-1.2.3-2.5.5-4 .5z"/>'
+      : '<path d="M12 5c-5 0-9 3.5-10 7 1 3.5 5 7 10 7s9-3.5 10-7c-1-3.5-5-7-10-7zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/><circle cx="12" cy="12" r="2.5"/>';
+  });
+})();
 
-        <button type="submit" class="btn">Salvar Perfil</button>
-      </form>
+/* =======================
+   Estado local
+======================= */
+let alvo = { id: null, loginOriginal: "" };
 
-      <div class="divider-h"></div>
+window.onload = () => {
+  const dados = localStorage.getItem('usuarioLogado');
+  if (dados) {
+    const user = JSON.parse(dados);
+    document.getElementById('loginBox').classList.add('hidden');
+    document.getElementById('painelUsuario').classList.remove('hidden');
+    document.getElementById('mensagemLogin').innerText = `Bem-vindo(a), ${user.nome}!`;
 
-      <!-- Trocar Senha -->
-      <form id="formSenha">
-        <div class="form-group">
-          <label for="cfgSenhaAtual">Senha Atual</label>
-          <input type="password" id="cfgSenhaAtual" required>
-        </div>
+    if (user.isAdmin && !document.getElementById('adminCardsBuilt')) {
+      montarPainelAdmin();
+    } else {
+      fetch(`/usuarios?login=${encodeURIComponent(user.usuario)}`)
+        .then(res => res.json())
+        .then(resp => {
+          const lista = Array.isArray(resp) ? resp : (resp.usuarios || []);
+          if (lista.length > 0) {
+            const isAdmin = lista[0].usuario === 'admin';
+            if (isAdmin && !document.getElementById('adminCardsBuilt')) montarPainelAdmin();
+          }
+        })
+        .catch(()=>{});
+    }
+  }
+};
 
-        <div class="form-group">
-          <label for="cfgNovaSenha">Nova Senha</label>
-          <input type="password" id="cfgNovaSenha" required minlength="6">
-        </div>
+/* ------------ Auth ------------ */
+function login() {
+  const usuario = document.getElementById('user').value.trim();
+  const senha   = document.getElementById('pass').value;
+  const msgEl   = document.getElementById('mensagem');
 
-        <div class="form-group">
-          <label for="cfgConfirmarSenha">Confirmar Nova Senha</label>
-          <input type="password" id="cfgConfirmarSenha" required minlength="6">
-        </div>
+  if (!usuario || !senha){
+    msgEl.textContent = 'Informe login e senha.'; return;
+  }
 
-        <button type="submit" class="btn">Alterar Senha</button>
-      </form>
-    </div>
-  </div>
+  fetch('/login', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    credentials: 'include',
+    body: JSON.stringify({ usuario, senha })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success){
+      localStorage.setItem('usuarioLogado', JSON.stringify(data));
+      if (data.isAdmin) { document.getElementById('loginBox').classList.add('hidden'); document.getElementById('painelUsuario').classList.remove('hidden'); }
+      else window.location.href = 'dash.html';
+    } else {
+      msgEl.textContent = data.message || 'Usuário ou senha inválidos!';
+    }
+  })
+  .catch(()=> msgEl.textContent = 'Sem conexão com o servidor.');
+}
 
-  <script>
-    let usuarioAtual = null;
-    let usuarioId = null;
-    let dispositivoAtual = null;
-    let chart = null;
+function logout(){
+  try{
+    const u = JSON.parse(localStorage.getItem('usuarioLogado') || '{}');
+    fetch('/logout', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({usuario: u.usuario})});
+  }catch{}
+  localStorage.removeItem('usuarioLogado');
+  location.reload();
+}
 
-    // Inicializar gráfico vazio
-    const ctx = document.getElementById('chart').getContext('2d');
-    chart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: [],
-        datasets: [{
-          label: 'Umidade do Solo (%)',
-          data: [],
-          borderColor: '#00ffc3',
-          backgroundColor: 'transparent',
-          tension: 0.3
-        }]
-      },
-      options: {
-        scales: { y: { beginAtZero: true, max: 100 } },
-        plugins: { legend: { labels: { color: '#00ffc3' } } }
+/* ------------ Cadastro ------------ */
+function criarUsuario(){
+  const nome    = document.getElementById('nomeUsuario').value.trim();
+  const email   = document.getElementById('emailUsuario').value.trim();
+  const usuario = document.getElementById('novoUsuario').value.trim();
+  const senha   = document.getElementById('novaSenha').value.trim();
+
+  fetch('/usuarios',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ nome, email, usuario, senha })
+  })
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById('mensagem').innerText = data.message || (data.success ? 'Criado!' : 'Erro.');
+    filtrarUsuarios();
+  })
+  .catch(()=> document.getElementById('mensagem').innerText = 'Erro ao criar usuário.');
+}
+
+/* ------------ Gerenciar Dispositivos (NOVO) ------------ */
+function carregarDispositivos() {
+  const lista = document.getElementById('listaDispositivos');
+  lista.innerHTML = '<p style="opacity: 0.7; font-size: 12px;">Carregando dispositivos...</p>';
+
+  // Buscar dispositivos ESP32 com informações de usuário
+  fetch('/esp32/dispositivos/todos')
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.dispositivos && data.dispositivos.length > 0) {
+        exibirDispositivos(data.dispositivos);
+      } else {
+        // Se a rota /esp32/dispositivos/todos não existir, vamos buscar de outra forma
+        // Primeiro, buscar todos os usuários
+        return fetch('/usuarios')
+          .then(res => res.json())
+          .then(usuarios => {
+            const promessas = usuarios.map(usuario => 
+              fetch(`/esp32/dispositivos/${usuario.id}`)
+                .then(res => res.json())
+                .then(data => {
+                  if (data.success && data.dispositivos) {
+                    return data.dispositivos.map(disp => ({
+                      ...disp,
+                      usuario_nome: usuario.nome,
+                      usuario_login: usuario.usuario
+                    }));
+                  }
+                  return [];
+                })
+                .catch(() => [])
+            );
+            
+            return Promise.all(promessas);
+          })
+          .then(resultados => {
+            const todosDispositivos = resultados.flat();
+            if (todosDispositivos.length > 0) {
+              exibirDispositivos(todosDispositivos);
+            } else {
+              lista.innerHTML = '<p style="opacity: 0.7; font-size: 12px;">Nenhum dispositivo encontrado no sistema.</p>';
+            }
+          });
       }
+    })
+    .catch(err => {
+      console.error('Erro ao carregar dispositivos:', err);
+      lista.innerHTML = '<p style="color: #ff4444; font-size: 12px;">Erro ao carregar dispositivos.</p>';
     });
+}
 
-    // =====================
-    // VERIFICAÇÃO DE SESSÃO SEGURA
-    // =====================
-    async function verificarSessao() {
-      try {
-        const response = await fetch('/session', { credentials: 'include' });
-        const data = await response.json();
-        if (!data.authenticated) {
-          alert('Você precisa fazer login para acessar esta página.');
-          window.location.href = '/login.html';
-          return null;
-        }
-        return data.user;
-      } catch (error) {
-        console.error('Erro ao verificar sessão:', error);
-        alert('Erro ao verificar autenticação. Redirecionando para login...');
-        window.location.href = '/login.html';
-        return null;
-      }
-    }
+function exibirDispositivos(dispositivos) {
+  const lista = document.getElementById('listaDispositivos');
+  lista.innerHTML = '';
+  
+  if (!dispositivos || dispositivos.length === 0) {
+    lista.innerHTML = '<p style="opacity: 0.7; font-size: 12px;">Nenhum dispositivo encontrado.</p>';
+    return;
+  }
 
-    // Inicializar página
-    async function inicializar() {
-      const user = await verificarSessao();
-      if (!user) return;
+  dispositivos.forEach(disp => {
+    const item = document.createElement('div');
+    item.style.cssText = 'margin-bottom: 10px; padding: 8px; border: 1px solid #444; border-radius: 4px; background-color: #111;';
+    
+    const usuarioInfo = disp.usuario_nome ? 
+      `<strong>${disp.usuario_nome}</strong> (${disp.usuario_login || 'ID: ' + disp.fk_usuarios})` : 
+      `<span style="color: #ff8888;">Não vinculado</span>`;
+    
+    const culturaInfo = disp.nome_cultura ? 
+      `<span style="color: #88ff88;">${disp.nome_cultura}</span>` : 
+      `<span style="opacity: 0.6;">Sem cultura</span>`;
 
-      usuarioAtual = user.usuario;
-      usuarioId = user.id;
+    item.innerHTML = `
+      <div style="font-size: 12px;">
+        <div><strong>Serial:</strong> ${disp.serialnumber}</div>
+        <div><strong>Usuário:</strong> ${usuarioInfo}</div>
+        <div><strong>Cultura:</strong> ${culturaInfo}</div>
+        <div style="opacity: 0.6; margin-top: 4px;">ID: ${disp.id}</div>
+      </div>
+    `;
+    
+    lista.appendChild(item);
+  });
+}
 
-      document.getElementById('boasVindas').innerHTML = `Bem vindo <strong>${user.nome}</strong>`;
-
-      carregarDispositivos();
-      prepararModalConfiguracoes();
-    }
-
-    // =====================
-    // MODAL CONFIGURAÇÕES
-    // =====================
-    function prepararModalConfiguracoes() {
-      const modal = document.getElementById('modalConfig');
-      const btnAbrir = document.getElementById('btnAbrirConfig');
-      const btnFechar = document.getElementById('fecharModal');
-      const alertBox = document.getElementById('alertConfig');
-
-      function showAlert(msg, type='success') {
-        alertBox.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
-        setTimeout(() => { alertBox.innerHTML = ''; }, 5000);
-      }
-
-      btnAbrir.onclick = async () => {
-        await preencherPerfilNoModal();
-        modal.style.display = 'block';
-      };
-      btnFechar.onclick = () => modal.style.display = 'none';
-      window.addEventListener('click', (e) => {
-        if (e.target === modal) modal.style.display = 'none';
-      });
-
-      // Salvar Perfil
-      document.getElementById('formPerfil').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const nome = document.getElementById('cfgNome').value;
-        const email = document.getElementById('cfgEmail').value;
-
-        try {
-          const resp = await fetch('/usuario/perfil', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ nome, email })
-          });
-          const data = await resp.json();
-          if (data.success) {
-            showAlert('Perfil atualizado com sucesso!', 'success');
-            document.getElementById('boasVindas').innerHTML = `Bem vindo <strong>${nome}</strong>`;
-          } else {
-            showAlert(data.message || 'Erro ao atualizar perfil', 'error');
-          }
-        } catch (err) {
-          console.error(err);
-          showAlert('Erro ao salvar perfil', 'error');
-        }
-      });
-
-      // Trocar senha
-      document.getElementById('formSenha').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const senhaAtual = document.getElementById('cfgSenhaAtual').value;
-        const novaSenha = document.getElementById('cfgNovaSenha').value;
-        const confirmarSenha = document.getElementById('cfgConfirmarSenha').value;
-
-        if (novaSenha !== confirmarSenha) {
-          showAlert('A nova senha e a confirmação não coincidem', 'error');
-          return;
-        }
-
-        try {
-          const resp = await fetch('/usuario/senha', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ senhaAtual, novaSenha, confirmarSenha })
-          });
-          const data = await resp.json();
-          if (data.success) {
-            showAlert('Senha alterada com sucesso!', 'success');
-            document.getElementById('formSenha').reset();
-          } else {
-            showAlert(data.message || 'Erro ao alterar senha', 'error');
-          }
-        } catch (err) {
-          console.error(err);
-          showAlert('Erro ao alterar senha', 'error');
-        }
-      });
-    }
-
-    async function preencherPerfilNoModal() {
-      try {
-        const resp = await fetch('/usuario/perfil', { credentials: 'include' });
-        if (resp.status === 401) {
-          alert('Sessão expirada. Faça login novamente.');
-          window.location.href = '/login.html';
-          return;
-        }
-        const data = await resp.json();
-        // preencher a partir da API
-        if (data.success && data.perfil) {
-          document.getElementById('cfgNome').value   = data.perfil.nome   || '';
-          document.getElementById('cfgEmail').value  = data.perfil.email  || '';
-          const idEl  = document.getElementById('cfgUserId');
-          const usuEl = document.getElementById('cfgUsuario');
-          if (idEl)  idEl.value  = data.perfil.id ?? '';
-          if (usuEl) usuEl.value = data.perfil.usuario || '';
-        }
-        // fallback com dados da sessão (garante exibição mesmo se a API não retornar)
-        const idEl  = document.getElementById('cfgUserId');
-        const usuEl = document.getElementById('cfgUsuario');
-        if (idEl && !idEl.value)  idEl.value  = usuarioId ?? '';
-        if (usuEl && !usuEl.value) usuEl.value = usuarioAtual ?? '';
-      } catch (err) {
-        console.error('Erro ao carregar perfil no modal:', err);
-        // fallback
-        const idEl  = document.getElementById('cfgUserId');
-        const usuEl = document.getElementById('cfgUsuario');
-        if (idEl)  idEl.value  = usuarioId ?? '';
-        if (usuEl) usuEl.value = usuarioAtual ?? '';
-      }
-    }
-
-    // =====================
-    // DADOS / LISTAGEM / PROJEÇÃO
-    // =====================
-    function carregarDispositivos() {
-      if (!usuarioId) return;
-      fetch(`/esp32/dispositivos/${usuarioId}`, { credentials: 'include' })
-        .then(res => {
-          if (res.status === 401) {
-            alert('Sessão expirada. Faça login novamente.');
-            window.location.href = '/login.html';
-            return;
-          }
-          return res.json();
-        })
-        .then(data => {
-          if (!data) return;
-          if (data.success && data.dispositivos.length > 0) {
-            exibirListaDispositivos(data.dispositivos);
-            document.getElementById('mensagemSemDispositivo').style.display = 'none';
-            document.getElementById('conteudoDispositivo').style.display = 'block';
-            selecionarDispositivo(data.dispositivos[0]);
-          } else {
-            document.getElementById('listaDispositivos').innerHTML =
-              '<p style="font-size: 12px; opacity: 0.7; margin-top: 10px;">Nenhum dispositivo vinculado</p>';
-            document.getElementById('mensagemSemDispositivo').style.display = 'block';
-            document.getElementById('conteudoDispositivo').style.display = 'none';
-          }
-        })
-        .catch(err => {
-          console.error('Erro ao carregar dispositivos:', err);
-          document.getElementById('listaDispositivos').innerHTML =
-            '<p style="font-size: 12px; color: #ff4444;">Erro ao carregar dispositivos</p>';
+function carregarCulturas() {
+  fetch('/culturas')
+    .then(res => res.json())
+    .then(data => {
+      const select = document.getElementById('culturaVinculo');
+      if (data && Array.isArray(data)) {
+        data.forEach(cultura => {
+          const option = document.createElement('option');
+          option.value = cultura.id;
+          option.textContent = cultura.cultura;
+          select.appendChild(option);
         });
-    }
-
-    function exibirListaDispositivos(dispositivos) {
-      const lista = document.getElementById('listaDispositivos');
-      lista.innerHTML = '<h3 style="font-size: 14px; margin-bottom: 10px;">Meus Dispositivos</h3>';
-      dispositivos.forEach(disp => {
-        const item = document.createElement('div');
-        item.className = 'dispositivo-item';
-        item.dataset.dispositivoId = disp.id;
-        item.innerHTML = `
-          <div class="dispositivo-info">
-            <strong>${disp.nome_cultura || 'Sem cultura'}</strong>
-            <small>Serial: ${disp.serialnumber}</small>
-          </div>`;
-        item.onclick = () => selecionarDispositivo(disp);
-        lista.appendChild(item);
+      }
+    })
+    .catch(err => {
+      console.error('Erro ao carregar culturas:', err);
+      // Se não conseguir carregar culturas, adicionar algumas opções padrão
+      const select = document.getElementById('culturaVinculo');
+      const culturasPadrao = ['Alface', 'Tomate', 'Cenoura', 'Milho', 'Soja'];
+      culturasPadrao.forEach((nome, index) => {
+        const option = document.createElement('option');
+        option.value = index + 1;
+        option.textContent = nome;
+        select.appendChild(option);
       });
-    }
+    });
+}
 
-    function selecionarDispositivo(dispositivo) {
-      dispositivoAtual = dispositivo;
-      document.querySelectorAll('.dispositivo-item').forEach(item => {
-        item.classList.remove('selecionado');
-        if (item.dataset.dispositivoId == dispositivo.id) item.classList.add('selecionado');
-      });
-      document.getElementById('nomeDispositivo').innerText = dispositivo.nome_cultura || 'Sem cultura definida';
-      document.getElementById('serialDispositivo').innerText = `Serial: ${dispositivo.serialnumber}`;
-      document.getElementById('culturaNome').innerText = dispositivo.nome_cultura || '---';
-      document.getElementById('aguaNecessaria').innerText = dispositivo.agua_necessaria ? `${dispositivo.agua_necessaria} L/m²` : '---';
-      document.getElementById('frequenciaIrrigacao').innerText = dispositivo.frequencia_irrigacao_dias ? `${dispositivo.frequencia_irrigacao_dias} dias` : '---';
+function vincularDispositivo() {
+  const serial = document.getElementById('serialVinculo').value.trim();
+  const usuarioLogin = document.getElementById('usuarioVinculo').value.trim();
+  const culturaId = document.getElementById('culturaVinculo').value;
+  const msg = document.getElementById('mensagemVinculo');
 
-      carregarDadosSensores(dispositivo.id);
-      carregarHistorico(dispositivo.id);
-      carregarProjecaoIrrigacao(dispositivo.id);
+  if (!serial || !usuarioLogin) {
+    msg.innerText = 'Por favor, preencha o serial do dispositivo e o login do usuário.';
+    msg.style.color = '#ff4444';
+    return;
+  }
 
-      if (window.intervalAtualizacao) clearInterval(window.intervalAtualizacao);
-      window.intervalAtualizacao = setInterval(() => {
-        carregarDadosSensores(dispositivo.id);
-        carregarProjecaoIrrigacao(dispositivo.id);
-      }, 30000);
-    }
+  // Primeiro, verificar se o usuário existe
+  fetch(`/usuarios?login=${encodeURIComponent(usuarioLogin)}`)
+    .then(res => res.json())
+    .then(usuarios => {
+      if (!usuarios || usuarios.length === 0) {
+        msg.innerText = 'Usuário não encontrado.';
+        msg.style.color = '#ff4444';
+        return;
+      }
 
-    function carregarDadosSensores(dispositivoId) {
-      fetch(`/esp32/sensores/${dispositivoId}/latest`, { credentials: 'include' })
-        .then(res => {
-          if (res.status === 401) {
-            alert('Sessão expirada. Faça login novamente.');
-            window.location.href = '/login.html';
-            return;
-          }
-          return res.json();
-        })
-        .then(data => {
-          if (!data) return;
-          if (data.success && data.dados) {
-            const d = data.dados;
-            document.getElementById('umidadeSolo').innerText = d.umidade_solo_perc ? `${d.umidade_solo_perc}%` : '--%';
-            document.getElementById('umidadeSoloBruto').innerText = `Valor bruto: ${d.umidade_solo_bruto || '---'}`;
-            document.getElementById('umidadeAr').innerText = d.umidade_ar ? `${d.umidade_ar}%` : '--%';
-            document.getElementById('temperatura').innerText = d.temperatura ? `${d.temperatura}°C` : '--°C';
+      const usuario = usuarios[0];
+      
+      // Agora, verificar se o dispositivo existe na tabela esp32_dispositivos
+      // Se não existir, criar primeiro
+      const dadosVinculo = {
+        serialnumber: serial,
+        fk_usuarios: usuario.id,
+        fk_culturas: culturaId || null
+      };
 
-            if (d.update_em || d.criado_em) {
-              const dataAtualizacao = new Date(d.update_em || d.criado_em);
-              document.getElementById('ultimaAtualizacao').innerText = dataAtualizacao.toLocaleString('pt-BR');
-
-              const minutos = (Date.now() - dataAtualizacao.getTime()) / 1000 / 60;
-              if (minutos < 5) document.getElementById('statusDispositivo').innerHTML = '🟢 Online';
-              else if (minutos < 30) document.getElementById('statusDispositivo').innerHTML = '🟡 Inativo';
-              else document.getElementById('statusDispositivo').innerHTML = '🔴 Offline';
-            } else {
-              document.getElementById('ultimaAtualizacao').innerText = 'Sem dados';
-              document.getElementById('statusDispositivo').innerHTML = '⚪ Sem dados';
-            }
-          } else {
-            document.getElementById('umidadeSolo').innerText = '--%';
-            document.getElementById('umidadeSoloBruto').innerText = 'Valor bruto: ---';
-            document.getElementById('umidadeAr').innerText = '--%';
-            document.getElementById('temperatura').innerText = '--°C';
-            document.getElementById('ultimaAtualizacao').innerText = 'Sem leituras';
-            document.getElementById('statusDispositivo').innerHTML = '⚪ Sem dados';
-          }
-        })
-        .catch(err => console.error('Erro ao carregar dados dos sensores:', err));
-    }
-
-    function carregarHistorico(dispositivoId) {
-      fetch(`/esp32/sensores/${dispositivoId}/historico?horas=24`, { credentials: 'include' })
-        .then(res => {
-          if (res.status === 401) {
-            alert('Sessão expirada. Faça login novamente.');
-            window.location.href = '/login.html';
-            return;
-          }
-          return res.json();
-        })
-        .then(data => {
-          if (!data) return;
-          if (data.success && data.historico.length > 0) {
-            const labels = [];
-            const valores = [];
-            data.historico.forEach(leitura => {
-              const dt = new Date(leitura.criado_em);
-              const hora = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-              labels.push(hora);
-              valores.push(leitura.umidade_solo_perc || 0);
-            });
-            chart.data.labels = labels;
-            chart.data.datasets[0].data = valores;
-            chart.update();
-          } else {
-            chart.data.labels = ['Sem dados'];
-            chart.data.datasets[0].data = [0];
-            chart.update();
-          }
-        })
-        .catch(err => console.error('Erro ao carregar histórico:', err));
-    }
-
-    function carregarProjecaoIrrigacao(dispositivoId) {
-      fetch(`/esp32/projecao/${dispositivoId}`, { credentials: 'include' })
-        .then(res => {
-          if (res.status === 401) {
-            alert('Sessão expirada. Faça login novamente.');
-            window.location.href = '/login.html';
-            return;
-          }
-          return res.json();
-        })
-        .then(data => {
-          if (!data) return;
-          if (data.success && data.projecao) {
-            const p = data.projecao;
-            if (p.data_proxima_irrigacao) {
-              const dataIrrigacao = new Date(p.data_proxima_irrigacao);
-              const dataFormatada = dataIrrigacao.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-              document.getElementById('proximaIrrigacao').innerText = dataFormatada;
-
-              if (p.dias_restantes !== null) {
-                if (p.dias_restantes > 0) document.getElementById('diasRestantes').innerText = `Em ${p.dias_restantes} dia(s)`;
-                else if (p.dias_restantes === 0) document.getElementById('diasRestantes').innerText = 'Hoje';
-                else document.getElementById('diasRestantes').innerText = `Atrasado há ${Math.abs(p.dias_restantes)} dia(s)`;
-              }
-            } else {
-              document.getElementById('proximaIrrigacao').innerText = '---';
-              document.getElementById('diasRestantes').innerText = 'Sem dados de irrigação';
-            }
-
-            if (p.quantidade_agua_litros) {
-              document.getElementById('quantidadeAgua').innerText = `${p.quantidade_agua_litros.toFixed(0)} L`;
-              document.getElementById('areaInfo').innerText = `Área: ${p.area_cultivada_m2} m²`;
-            } else {
-              document.getElementById('quantidadeAgua').innerText = '--- L';
-              document.getElementById('areaInfo').innerText = 'Área: ---';
-            }
-          } else {
-            document.getElementById('proximaIrrigacao').innerText = '---';
-            document.getElementById('diasRestantes').innerText = 'Sem dados';
-            document.getElementById('quantidadeAgua').innerText = '--- L';
-            document.getElementById('areaInfo').innerText = 'Área: ---';
-          }
-        })
-        .catch(err => console.error('Erro ao carregar projeção de irrigação:', err));
-    }
-
-    function logout() {
-      if (window.intervalAtualizacao) clearInterval(window.intervalAtualizacao);
-      fetch('/logout', {
+      // Tentar inserir/atualizar o dispositivo
+      fetch('/esp32/dispositivos', {
         method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' }
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(dadosVinculo)
       })
-      .then(() => { localStorage.removeItem('usuarioLogado'); window.location.href = '/login.html'; })
-      .catch(() => { localStorage.removeItem('usuarioLogado'); window.location.href = '/login.html'; });
-    }
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          msg.innerText = `Dispositivo ${serial} vinculado com sucesso ao usuário ${usuarioLogin}!`;
+          msg.style.color = '#44ff44';
+          
+          // Limpar campos
+          document.getElementById('serialVinculo').value = '';
+          document.getElementById('usuarioVinculo').value = '';
+          document.getElementById('culturaVinculo').value = '';
+          
+          // Atualizar lista de dispositivos
+          carregarDispositivos();
+        } else {
+          msg.innerText = data.message || 'Erro ao vincular dispositivo.';
+          msg.style.color = '#ff4444';
+        }
+      })
+      .catch(err => {
+        console.error('Erro ao vincular dispositivo:', err);
+        msg.innerText = 'Erro ao conectar com o servidor.';
+        msg.style.color = '#ff4444';
+      });
+    })
+    .catch(err => {
+      console.error('Erro ao buscar usuário:', err);
+      msg.innerText = 'Erro ao verificar usuário.';
+      msg.style.color = '#ff4444';
+    });
+}
 
-    // Inicializar ao carregar a página
-    inicializar();
-  </script>
+/* ------------ Listagem / Alteração / Exclusão ------------ */
+function filtrarUsuarios(){
+  const q = (document.getElementById('usuarioBusca')?.value || '').trim();
+  fetch('/usuarios/busca?q=' + encodeURIComponent(q))
+    .then(r=>r.json())
+    .then(data => { if(data.success) exibirUsuarios(data.usuarios); })
+    .catch(()=>{});
+}
+
+function exibirUsuarios(lista){
+  const c = document.getElementById('listaUsuarios');
+  c.innerHTML = '';
+  (lista || []).forEach(u=>{
+    const label = (u.usuario && u.usuario.trim()) ? u.usuario : '(sem login)';
+    const row = document.createElement('div');
+    row.className = 'usuario-item';
+    row.innerHTML = `
+      <span><strong>${label}</strong> <small>(id: ${u.id})</small></span>
+      <button type="button">Editar</button>
+    `;
+    row.querySelector('button').onclick = () => preencherForm(u);
+    c.appendChild(row);
+  });
+}
+
+function preencherForm(u){
+  alvo.id = u.id;                          // sempre teremos ID
+  alvo.loginOriginal = (u.usuario || '');  // pode estar vazio
+  document.getElementById('formAlteracao').style.display = 'block';
+  document.getElementById('novoLogin').value = u.usuario || '';
+  document.getElementById('novoNome').value  = u.nome    || '';
+  document.getElementById('novoEmail').value = u.email   || '';
+  document.getElementById('novaSenhaAlterar').value = '';
+  document.getElementById('msgAlteracao').innerText = '';
+}
+
+async function atualizarUsuario(){
+  const msg = (t)=> document.getElementById('msgAlteracao').innerText = t;
+  if(!alvo.id){ msg('Selecione um usuário na lista.'); return; }
+
+  // campos do form
+  const novoLogin = document.getElementById('novoLogin').value.trim();
+  const novoNome  = document.getElementById('novoNome').value.trim();
+  const novoEmail = document.getElementById('novoEmail').value.trim();
+  const novaSenha = document.getElementById('novaSenhaAlterar').value;
+
+  // Para registros "vazios", exigimos todos os campos para corrigir de uma vez
+  if(!(novoLogin && novoNome && novoEmail && novaSenha)){
+    msg('Preencha login, nome, e-mail e uma nova senha para atualizar este usuário.');
+    return;
+  }
+
+  try{
+    // Preferimos atualizar por ID (rota: PUT /usuarios/:id)
+    const url = '/usuarios/' + encodeURIComponent(alvo.id);
+
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ usuario: novoLogin, senha: novaSenha, nome: novoNome, email: novoEmail })
+    }).then(r=>r.json());
+
+    if(res.success){
+      msg('Usuário atualizado com sucesso!');
+      alvo.loginOriginal = novoLogin; // caso tenha sido definido/corrigido
+      filtrarUsuarios();
+    }else{
+      msg(res.message || res.error || 'Erro ao atualizar.');
+    }
+  }catch(e){
+    console.error(e);
+    msg('Erro ao atualizar (ver console).');
+  }
+}
+
+async function excluirUsuarioPorLogin(){
+  const msg = (t)=> document.getElementById('msgAlteracao').innerText = t;
+  if(!alvo.id){ msg('Selecione um usuário na lista.'); return; }
+  if(!confirm('Excluir este usuário? Essa ação é irreversível.')) return;
+
+  try{
+    // Agora deletamos DIRETO por ID (independente do login estar vazio)
+    const res = await fetch('/usuarios/' + encodeURIComponent(alvo.id), { method: 'DELETE' })
+      .then(r=>r.json());
+
+    if(res.success){
+      msg('Usuário excluído com sucesso!');
+      alvo = { id:null, loginOriginal:'' };
+      document.getElementById('formAlteracao').style.display = 'none';
+      filtrarUsuarios();
+    }else{
+      msg(res.message || res.error || 'Erro ao excluir.');
+    }
+  }catch(e){
+    console.error(e);
+    msg('Erro ao excluir (ver console).');
+  }
+}
+
+/* ------------ Logs / Online ------------ */
+function mostrarUsuariosOnline(){
+  fetch('/online')
+    .then(res=>res.json())
+    .then(data=> document.getElementById('usuariosOnline').innerText = `Usuários online: ${data.online}`)
+    .catch(()=> document.getElementById('usuariosOnline').innerText = 'Usuários online: erro');
+}
+
+function carregarLogs(){
+  const u = (document.getElementById('filtroUsuarioLog')?.value || '').trim();
+  const s = (document.getElementById('filtroSucesso')?.value || '');
+  const qs = new URLSearchParams();
+  if (u) qs.set('usuario', u);
+  if (s!=='') qs.set('sucesso', s);
+  qs.set('limit', 50);
+
+  fetch('/admin/logins?'+qs.toString(), { headers: { 'X-Admin':'1' }})
+    .then(res=>res.json())
+    .then(data=>{
+      const logsDiv = document.getElementById('logsArea');
+      logsDiv.innerHTML = '';
+      if (!data.success){ logsDiv.innerHTML = '<div style="color:#ff8a8a;">Não autorizado ou erro.</div>'; return; }
+      (data.logs||[]).forEach(log=>{
+        const d = new Date(log.criado_em);
+        const row = document.createElement('div');
+        row.className = 'log-item';
+        row.innerHTML = `<strong>${log.usuario || '(desconhecido)'}</strong> — ${log.ip} — ${d.toLocaleString()} — ${log.sucesso ? '✔' : '✖'}<br><small>${log.user_agent || ''}</small>`;
+        logsDiv.appendChild(row);
+      });
+      if (!(data.logs||[]).length) logsDiv.innerHTML = '<div style="opacity:.8;">Sem logs ainda.</div>';
+    })
+    .catch(()=> document.getElementById('logsArea').innerHTML = '<div style="color:#ff8a8a;">Erro ao carregar logs.</div>');
+}
+</script>
 </body>
 </html>
+
+

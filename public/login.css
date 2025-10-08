@@ -188,6 +188,38 @@ button:active{ transform: translateY(1px); }
   margin: 6% auto;      /* centraliza */
 }
 
+.input-wrap{
+  position: relative;
+}
+.input-wrap input{
+  width: 100%;
+  text-align: left;           /* garante alinhamento normal do texto */
+  padding-right: 44px;        /* espaço para o botão */
+}
+.toggle-pass{
+  position: absolute;
+  top: 0;                     /* ocupa a altura toda do input */
+  bottom: 0;
+  right: 50px;               /* grudadinho à direita */
+  width: 36px;                /* área de clique confortável */
+  display: flex;              /* centraliza o ícone na altura */
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  border-radius: 8px;
+  color: #9fffe9;
+  z-index: 2;                 /* fica acima do input */
+}
+.toggle-pass:hover{
+  background: rgba(0,255,195,.08);
+}
+.toggle-pass svg{
+  width: 18px; height: 18px;
+  pointer-events: none;       /* evita “roubar” o clique */
+}
+
 /* =================== MOBILE TWEAKS =================== */
 @media (max-width: 600px){
   body{ padding: 20px 12px; }
