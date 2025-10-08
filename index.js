@@ -73,7 +73,7 @@ function getClientIp(req) {
 const getUA = req => req.headers['user-agent'] || '';
 const getRef = req => req.headers['referer'] || req.headers['referrer'] || '';
 
-// “sessão” simples em memória
+// "sessão" simples em memória
 const usuariosOnline = new Set();
 
 // =====================
@@ -225,6 +225,294 @@ app.delete('/usuarios/:id', (req, res) => {
 });
 
 // =====================
+// Dispositivos (NOVO)
+// =====================
+app.post('/dispositivos', (req, res) => {
+  const { serial } = req.body || {};
+  
+  if (!serial || !serial.trim()) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Serial do dispositivo é obrigatório' 
+    });
+  }
+
+  const sql = 'INSERT INTO dispositivos (serial) VALUES (?)';
+  db.query(sql, [serial.trim()], (err, result) => {
+    if (err) {
+      if (err.code === 'ER_DUP_ENTRY') {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Dispositivo com este serial já existe!' 
+        });
+      }
+      console.error('Erro /dispositivos POST:', err.message);
+      return res.status(500).json({ 
+        success: false, 
+        error: err.message 
+      });
+    }
+    res.json({ 
+      success: true, 
+      message: 'Dispositivo criado com sucesso!',
+      id: result.insertId
+    });
+  });
+});
+
+app.get('/dispositivos', (req, res) => {
+  const sql = 'SELECT id, serial, criado_em FROM dispositivos ORDER BY criado_em DESC';
+  db.query(sql, (err, rows) => {
+    if (err) {
+      console.error('Erro /dispositivos GET:', err.message);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+    res.json({ success: true, dispositivos: rows });
+  });
+});
+
+app.get('/dispositivos/:id', (req, res) => {
+  const { id } = req.params;
+  const sql = 'SELECT id, serial, criado_em FROM dispositivos WHERE id = ?';
+  db.query(sql, [id], (err, rows) => {
+    if (err) {
+      console.error('Erro /dispositivos/:id GET:', err.message);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Dispositivo não encontrado' });
+    }
+    res.json({ success: true, dispositivo: rows[0] });
+  });
+});
+
+app.delete('/dispositivos/:id', (req, res) => {
+  const { id } = req.params;
+  const sql = 'DELETE FROM dispositivos WHERE id = ?';
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error('Erro /dispositivos/:id DELETE:', err.message);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Dispositivo não encontrado' });
+    }
+    res.json({ success: true, message: 'Dispositivo excluído com sucesso!' });
+  });
+});
+
+// =====================
+// Vínculos Usuário-Dispositivo (NOVO)
+// =====================
+
+// Vincular dispositivo a usuário
+app.post('/usuario-dispositivos', (req, res) => {
+  const { usuario_login, serial, nome_plantacao } = req.body || {};
+  
+  if (!usuario_login || !serial || !nome_plantacao) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Usuário, serial e nome da plantação são obrigatórios' 
+    });
+  }
+
+  // Primeiro, buscar o ID do usuário pelo login
+  db.query('SELECT id FROM usuarios WHERE usuario = ?', [usuario_login], (err, userRows) => {
+    if (err) {
+      console.error('Erro ao buscar usuário:', err.message);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+    
+    if (userRows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Usuário não encontrado' });
+    }
+    
+    const usuario_id = userRows[0].id;
+    
+    // Buscar o ID do dispositivo pelo serial
+    db.query('SELECT id FROM dispositivos WHERE serial = ?', [serial], (err, devRows) => {
+      if (err) {
+        console.error('Erro ao buscar dispositivo:', err.message);
+        return res.status(500).json({ success: false, error: err.message });
+      }
+      
+      if (devRows.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Dispositivo não encontrado. Verifique se o serial está correto.' 
+        });
+      }
+      
+      const dispositivo_id = devRows[0].id;
+      
+      // Inserir o vínculo
+      const sql = 'INSERT INTO usuario_dispositivos (usuario_id, dispositivo_id, nome_plantacao) VALUES (?, ?, ?)';
+      db.query(sql, [usuario_id, dispositivo_id, nome_plantacao], (err, result) => {
+        if (err) {
+          if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ 
+              success: false, 
+              message: 'Este dispositivo já está vinculado à sua conta!' 
+            });
+          }
+          console.error('Erro ao vincular dispositivo:', err.message);
+          return res.status(500).json({ success: false, error: err.message });
+        }
+        
+        res.json({ 
+          success: true, 
+          message: 'Dispositivo vinculado com sucesso!',
+          vinculo_id: result.insertId
+        });
+      });
+    });
+  });
+});
+
+// Listar dispositivos de um usuário
+app.get('/usuario-dispositivos/:usuario_login', (req, res) => {
+  const { usuario_login } = req.params;
+  
+  const sql = `
+    SELECT 
+      ud.id as vinculo_id,
+      ud.nome_plantacao,
+      ud.criado_em,
+      d.id as dispositivo_id,
+      d.serial
+    FROM usuario_dispositivos ud
+    INNER JOIN usuarios u ON ud.usuario_id = u.id
+    INNER JOIN dispositivos d ON ud.dispositivo_id = d.id
+    WHERE u.usuario = ?
+    ORDER BY ud.criado_em DESC
+  `;
+  
+  db.query(sql, [usuario_login], (err, rows) => {
+    if (err) {
+      console.error('Erro ao listar dispositivos do usuário:', err.message);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+    
+    res.json({ success: true, dispositivos: rows });
+  });
+});
+
+// Remover vínculo
+app.delete('/usuario-dispositivos/:vinculo_id', (req, res) => {
+  const { vinculo_id } = req.params;
+  
+  const sql = 'DELETE FROM usuario_dispositivos WHERE id = ?';
+  db.query(sql, [vinculo_id], (err, result) => {
+    if (err) {
+      console.error('Erro ao remover vínculo:', err.message);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Vínculo não encontrado' });
+    }
+    
+    res.json({ success: true, message: 'Dispositivo desvinculado com sucesso!' });
+  });
+});
+
+// =====================
+// Dados dos Sensores ESP32 (NOVO)
+// =====================
+
+// Buscar dispositivos ESP32 de um usuário
+app.get('/esp32/dispositivos/:usuario_id', (req, res) => {
+  const { usuario_id } = req.params;
+  
+  // ==================================================================
+  // CORREÇÃO FINAL APLICADA AQUI
+  // ==================================================================
+  const sql = `
+    SELECT 
+      d.id,
+      d.serialnumber,
+      d.fk_culturas,
+      d.fk_usuarios,
+      c.cultura as nome_cultura,
+      c.agua_litros_m2 as agua_necessaria,
+      c.frequencia_irrigacao_dias
+    FROM esp32_dispositivos d
+    LEFT JOIN culturas c ON d.fk_culturas = c.id
+    WHERE d.fk_usuarios = ?
+    ORDER BY d.criado_em DESC
+  `;
+  
+  db.query(sql, [usuario_id], (err, rows) => {
+    if (err) {
+      console.error('Erro ao buscar dispositivos ESP32:', err.message);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+    
+    res.json({ success: true, dispositivos: rows });
+  });
+});
+
+// Buscar dados mais recentes dos sensores de um dispositivo
+app.get('/esp32/sensores/:dispositivo_id/latest', (req, res) => {
+  const { dispositivo_id } = req.params;
+  
+  const sql = `
+    SELECT 
+      umidade_solo_bruto,
+      umidade_solo_perc,
+      umidade_ar,
+      temperatura,
+      criado_em,
+      update_em
+    FROM esp32_sensores
+    WHERE fk_esp32_dispositivos = ?
+    ORDER BY criado_em DESC
+    LIMIT 1
+  `;
+  
+  db.query(sql, [dispositivo_id], (err, rows) => {
+    if (err) {
+      console.error('Erro ao buscar dados dos sensores:', err.message);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+    
+    if (rows.length === 0) {
+      return res.json({ success: true, dados: null, message: 'Nenhuma leitura encontrada' });
+    }
+    
+    res.json({ success: true, dados: rows[0] });
+  });
+});
+
+// Buscar histórico de leituras dos sensores (últimas 24h)
+app.get('/esp32/sensores/:dispositivo_id/historico', (req, res) => {
+  const { dispositivo_id } = req.params;
+  const { horas = 24 } = req.query;
+  
+  const sql = `
+    SELECT 
+      umidade_solo_bruto,
+      umidade_solo_perc,
+      umidade_ar,
+      temperatura,
+      criado_em
+    FROM esp32_sensores
+    WHERE fk_esp32_dispositivos = ?
+      AND criado_em >= DATE_SUB(NOW(), INTERVAL ? HOUR)
+    ORDER BY criado_em ASC
+  `;
+  
+  db.query(sql, [dispositivo_id, horas], (err, rows) => {
+    if (err) {
+      console.error('Erro ao buscar histórico dos sensores:', err.message);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+    
+    res.json({ success: true, historico: rows });
+  });
+});
+
+// =====================
 // Admin: logs
 // =====================
 function requireAdmin(req, res, next) {
@@ -257,7 +545,6 @@ app.get('/admin/logins', requireAdmin, (req, res) => {
 // Start
 // =====================
 app.listen(PORT, HOST, () => {
-  console.log(`Servidor rodando em http://${HOST}:${PORT}`);
+  console.log(`Servidor rodando em http://${HOST}:${PORT}` );
 });
-
 

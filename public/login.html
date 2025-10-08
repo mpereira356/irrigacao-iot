@@ -115,7 +115,29 @@ function montarPainelAdmin() {
     </div>
   `));
 
-  // CARD 3: Logs
+  // CARD 3: Gerenciar Dispositivos (SUBSTITUÍDO)
+  grid.appendChild(sectionCard(`
+    <h3>Gerenciar Dispositivos</h3>
+    <div style="margin-bottom: 15px;">
+      <h4 style="margin: 0 0 10px 0; font-size: 14px;">Dispositivos Existentes</h4>
+      <button onclick="carregarDispositivos()" style="margin-bottom: 10px;">Atualizar Lista</button>
+      <div id="listaDispositivos" style="max-height: 200px; overflow-y: auto; border: 1px solid #333; padding: 10px; background-color: #0a0a0a;">
+        <p style="opacity: 0.7; font-size: 12px;">Clique em "Atualizar Lista" para carregar os dispositivos</p>
+      </div>
+    </div>
+    <div style="border-top: 1px solid #333; padding-top: 15px;">
+      <h4 style="margin: 0 0 10px 0; font-size: 14px;">Vincular Dispositivo a Usuário</h4>
+      <input type="text" id="serialVinculo" placeholder="Serial do dispositivo (ex: 51126104720)">
+      <input type="text" id="usuarioVinculo" placeholder="Login do usuário">
+      <select id="culturaVinculo">
+        <option value="">Selecione uma cultura</option>
+      </select>
+      <button onclick="vincularDispositivo()">Vincular Dispositivo</button>
+      <p id="mensagemVinculo" class="help"></p>
+    </div>
+  `));
+
+  // CARD 4: Logs
   grid.appendChild(sectionCard(`
     <h3>Logs de Login</h3>
     <div class="filtros">
@@ -138,6 +160,9 @@ function montarPainelAdmin() {
 
   // carregar lista inicial
   filtrarUsuarios();
+  
+  // carregar culturas para o select
+  carregarCulturas();
 }
 
 function toggleLogs(){
@@ -203,6 +228,188 @@ function criarUsuario(){
     filtrarUsuarios();
   })
   .catch(()=> document.getElementById('mensagem').innerText = 'Erro ao criar usuário.');
+}
+
+/* ------------ Gerenciar Dispositivos (NOVO) ------------ */
+function carregarDispositivos() {
+  const lista = document.getElementById('listaDispositivos');
+  lista.innerHTML = '<p style="opacity: 0.7; font-size: 12px;">Carregando dispositivos...</p>';
+
+  // Buscar dispositivos ESP32 com informações de usuário
+  fetch('/esp32/dispositivos/todos')
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.dispositivos && data.dispositivos.length > 0) {
+        exibirDispositivos(data.dispositivos);
+      } else {
+        // Se a rota /esp32/dispositivos/todos não existir, vamos buscar de outra forma
+        // Primeiro, buscar todos os usuários
+        return fetch('/usuarios')
+          .then(res => res.json())
+          .then(usuarios => {
+            const promessas = usuarios.map(usuario => 
+              fetch(`/esp32/dispositivos/${usuario.id}`)
+                .then(res => res.json())
+                .then(data => {
+                  if (data.success && data.dispositivos) {
+                    return data.dispositivos.map(disp => ({
+                      ...disp,
+                      usuario_nome: usuario.nome,
+                      usuario_login: usuario.usuario
+                    }));
+                  }
+                  return [];
+                })
+                .catch(() => [])
+            );
+            
+            return Promise.all(promessas);
+          })
+          .then(resultados => {
+            const todosDispositivos = resultados.flat();
+            if (todosDispositivos.length > 0) {
+              exibirDispositivos(todosDispositivos);
+            } else {
+              lista.innerHTML = '<p style="opacity: 0.7; font-size: 12px;">Nenhum dispositivo encontrado no sistema.</p>';
+            }
+          });
+      }
+    })
+    .catch(err => {
+      console.error('Erro ao carregar dispositivos:', err);
+      lista.innerHTML = '<p style="color: #ff4444; font-size: 12px;">Erro ao carregar dispositivos.</p>';
+    });
+}
+
+function exibirDispositivos(dispositivos) {
+  const lista = document.getElementById('listaDispositivos');
+  lista.innerHTML = '';
+  
+  if (!dispositivos || dispositivos.length === 0) {
+    lista.innerHTML = '<p style="opacity: 0.7; font-size: 12px;">Nenhum dispositivo encontrado.</p>';
+    return;
+  }
+
+  dispositivos.forEach(disp => {
+    const item = document.createElement('div');
+    item.style.cssText = 'margin-bottom: 10px; padding: 8px; border: 1px solid #444; border-radius: 4px; background-color: #111;';
+    
+    const usuarioInfo = disp.usuario_nome ? 
+      `<strong>${disp.usuario_nome}</strong> (${disp.usuario_login || 'ID: ' + disp.fk_usuarios})` : 
+      `<span style="color: #ff8888;">Não vinculado</span>`;
+    
+    const culturaInfo = disp.nome_cultura ? 
+      `<span style="color: #88ff88;">${disp.nome_cultura}</span>` : 
+      `<span style="opacity: 0.6;">Sem cultura</span>`;
+
+    item.innerHTML = `
+      <div style="font-size: 12px;">
+        <div><strong>Serial:</strong> ${disp.serialnumber}</div>
+        <div><strong>Usuário:</strong> ${usuarioInfo}</div>
+        <div><strong>Cultura:</strong> ${culturaInfo}</div>
+        <div style="opacity: 0.6; margin-top: 4px;">ID: ${disp.id}</div>
+      </div>
+    `;
+    
+    lista.appendChild(item);
+  });
+}
+
+function carregarCulturas() {
+  fetch('/culturas')
+    .then(res => res.json())
+    .then(data => {
+      const select = document.getElementById('culturaVinculo');
+      if (data && Array.isArray(data)) {
+        data.forEach(cultura => {
+          const option = document.createElement('option');
+          option.value = cultura.id;
+          option.textContent = cultura.cultura;
+          select.appendChild(option);
+        });
+      }
+    })
+    .catch(err => {
+      console.error('Erro ao carregar culturas:', err);
+      // Se não conseguir carregar culturas, adicionar algumas opções padrão
+      const select = document.getElementById('culturaVinculo');
+      const culturasPadrao = ['Alface', 'Tomate', 'Cenoura', 'Milho', 'Soja'];
+      culturasPadrao.forEach((nome, index) => {
+        const option = document.createElement('option');
+        option.value = index + 1;
+        option.textContent = nome;
+        select.appendChild(option);
+      });
+    });
+}
+
+function vincularDispositivo() {
+  const serial = document.getElementById('serialVinculo').value.trim();
+  const usuarioLogin = document.getElementById('usuarioVinculo').value.trim();
+  const culturaId = document.getElementById('culturaVinculo').value;
+  const msg = document.getElementById('mensagemVinculo');
+
+  if (!serial || !usuarioLogin) {
+    msg.innerText = 'Por favor, preencha o serial do dispositivo e o login do usuário.';
+    msg.style.color = '#ff4444';
+    return;
+  }
+
+  // Primeiro, verificar se o usuário existe
+  fetch(`/usuarios?login=${encodeURIComponent(usuarioLogin)}`)
+    .then(res => res.json())
+    .then(usuarios => {
+      if (!usuarios || usuarios.length === 0) {
+        msg.innerText = 'Usuário não encontrado.';
+        msg.style.color = '#ff4444';
+        return;
+      }
+
+      const usuario = usuarios[0];
+      
+      // Agora, verificar se o dispositivo existe na tabela esp32_dispositivos
+      // Se não existir, criar primeiro
+      const dadosVinculo = {
+        serialnumber: serial,
+        fk_usuarios: usuario.id,
+        fk_culturas: culturaId || null
+      };
+
+      // Tentar inserir/atualizar o dispositivo
+      fetch('/esp32/dispositivos', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(dadosVinculo)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          msg.innerText = `Dispositivo ${serial} vinculado com sucesso ao usuário ${usuarioLogin}!`;
+          msg.style.color = '#44ff44';
+          
+          // Limpar campos
+          document.getElementById('serialVinculo').value = '';
+          document.getElementById('usuarioVinculo').value = '';
+          document.getElementById('culturaVinculo').value = '';
+          
+          // Atualizar lista de dispositivos
+          carregarDispositivos();
+        } else {
+          msg.innerText = data.message || 'Erro ao vincular dispositivo.';
+          msg.style.color = '#ff4444';
+        }
+      })
+      .catch(err => {
+        console.error('Erro ao vincular dispositivo:', err);
+        msg.innerText = 'Erro ao conectar com o servidor.';
+        msg.style.color = '#ff4444';
+      });
+    })
+    .catch(err => {
+      console.error('Erro ao buscar usuário:', err);
+      msg.innerText = 'Erro ao verificar usuário.';
+      msg.style.color = '#ff4444';
+    });
 }
 
 /* ------------ Listagem / Alteração / Exclusão ------------ */
