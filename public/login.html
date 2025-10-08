@@ -46,6 +46,24 @@
 
 */
 
+// Verificar se já está logado ao carregar a página
+async function verificarSessaoExistente() {
+  try {
+    const response = await fetch('/session', { credentials: 'include' });
+    const data = await response.json();
+    
+    if (data.authenticated) {
+      // Já está logado, redirecionar para dashboard
+      window.location.href = 'dash.html';
+    }
+  } catch (error) {
+    console.log('Não autenticado, mostrar login');
+  }
+}
+
+// Executar ao carregar a página
+verificarSessaoExistente();
+
 let alvo = { id: null, loginOriginal: "" }; // estado do usuário selecionado
 
 window.onload = () => {
@@ -181,23 +199,24 @@ function login() {
   // if (usuario==='admin'){ localStorage.setItem('usuarioLogado', JSON.stringify({usuario:'admin', nome:'Admin', isAdmin:true})); location.reload(); return; }
 
   fetch('/login', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ usuario, senha })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success){
-      localStorage.setItem('usuarioLogado', JSON.stringify(data));
-      document.getElementById('loginBox').classList.add('hidden');
-      document.getElementById('painelUsuario').classList.remove('hidden');
-      document.getElementById('mensagemLogin').innerText = `Bem-vindo(a), ${data.nome}!`;
-      if (data.isAdmin) montarPainelAdmin();
-      else window.location.href = `dash.html?user=${encodeURIComponent(data.usuario)}`;
-    }else{
-      alert(data.message || 'Usuário ou senha inválidos!');
-    }
-  })
+  method:'POST',
+  headers:{'Content-Type':'application/json'},
+  credentials: 'include',  // ← IMPORTANTE!
+  body: JSON.stringify({ usuario, senha })
+})
+.then(res => res.json())
+.then(data => {
+  if (data.success){
+    localStorage.setItem('usuarioLogado', JSON.stringify(data));
+    document.getElementById('loginBox').classList.add('hidden');
+    document.getElementById('painelUsuario').classList.remove('hidden');
+    document.getElementById('mensagemLogin').innerText = `Bem-vindo(a), ${data.nome}!`;
+    if (data.isAdmin) montarPainelAdmin();
+    else window.location.href = 'dash.html';  // ← SEM ?user=
+  }else{
+    alert(data.message || 'Usuário ou senha inválidos!');
+  }
+})
   .catch(()=> alert('Sem conexão com o servidor.'));
 }
 
@@ -547,4 +566,5 @@ function carregarLogs(){
 </script>
 </body>
 </html>
+
 

@@ -1,9 +1,11 @@
-// index.js — Express + MySQL (pool) + dotenv + logs de login + /ping + /debug-ip
+// index.js — Express + MySQL (pool) + dotenv + logs de login + SESSÕES SEGURAS
 const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const session = require('express-session');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 const app = express();
@@ -20,9 +22,26 @@ app.set('trust proxy', true);
 // =====================
 // Middlewares
 // =====================
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || true,
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// =====================
+// SESSÕES SEGURAS
+// =====================
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'smartfarm-secret-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // true em produção com HTTPS
+    httpOnly: true,
+    maxAge: 1000 * 60 * 60 * 24 // 24 horas
+  }
+}));
 
 // estáticos
 app.use(express.static(path.join(__dirname, 'public')));
@@ -73,8 +92,32 @@ function getClientIp(req) {
 const getUA = req => req.headers['user-agent'] || '';
 const getRef = req => req.headers['referer'] || req.headers['referrer'] || '';
 
-// "sessão" simples em memória
+// "sessão" simples em memória para contagem de usuários online
 const usuariosOnline = new Set();
+
+// =====================
+// MIDDLEWARE DE AUTENTICAÇÃO
+// =====================
+function requireAuth(req, res, next) {
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Não autenticado. Faça login primeiro.',
+      redirectTo: '/login.html'
+    });
+  }
+  next();
+}
+
+function requireAdmin(req, res, next) {
+  if (!req.session || !req.session.userId || !req.session.isAdmin) {
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Acesso negado. Apenas administradores.'
+    });
+  }
+  next();
+}
 
 // =====================
 // Rotas de saúde / debug
@@ -104,8 +147,8 @@ app.post('/login', (req, res) => {
   const ua = getUA(req);
   const origem = getRef(req);
 
-  const sql = 'SELECT id, usuario, nome FROM usuarios WHERE usuario = ? AND senha = ? LIMIT 1';
-  db.query(sql, [usuario, senha], (err, rows) => {
+  const sql = 'SELECT id, usuario, nome, senha FROM usuarios WHERE usuario = ? LIMIT 1';
+  db.query(sql, [usuario], (err, rows) => {
     if (err) {
       console.error('Erro /login:', err.message);
       db.query('INSERT INTO login_logs (usuario, sucesso, ip, user_agent, origem) VALUES (?,?,?,?,?)',
@@ -115,10 +158,30 @@ app.post('/login', (req, res) => {
 
     if (rows.length > 0) {
       const u = rows[0];
-      db.query('INSERT INTO login_logs (usuario, user_id, sucesso, ip, user_agent, origem) VALUES (?,?,?,?,?,?)',
-               [u.usuario, u.id, 1, ip, ua, origem]);
-      usuariosOnline.add(u.usuario);
-      return res.json({ success: true, isAdmin: u.usuario === 'admin', nome: u.nome, usuario: u.usuario });
+      
+      // Verificar senha (suporta tanto hash bcrypt quanto texto plano para migração)
+      const senhaValida = u.senha.startsWith('$2a$') || u.senha.startsWith('$2b$') 
+        ? bcrypt.compareSync(senha, u.senha)
+        : senha === u.senha;
+
+      if (senhaValida) {
+        // Criar sessão
+        req.session.userId = u.id;
+        req.session.usuario = u.usuario;
+        req.session.nome = u.nome;
+        req.session.isAdmin = u.usuario === 'admin';
+
+        db.query('INSERT INTO login_logs (usuario, user_id, sucesso, ip, user_agent, origem) VALUES (?,?,?,?,?,?)',
+                 [u.usuario, u.id, 1, ip, ua, origem]);
+        usuariosOnline.add(u.usuario);
+        
+        return res.json({ 
+          success: true, 
+          isAdmin: req.session.isAdmin, 
+          nome: u.nome, 
+          usuario: u.usuario 
+        });
+      }
     }
 
     db.query('INSERT INTO login_logs (usuario, sucesso, ip, user_agent, origem) VALUES (?,?,?,?,?)',
@@ -128,20 +191,49 @@ app.post('/login', (req, res) => {
 });
 
 app.post('/logout', (req, res) => {
-  const { usuario } = req.body || {};
-  if (usuario) usuariosOnline.delete(usuario);
-  res.json({ success: true });
+  if (req.session && req.session.usuario) {
+    usuariosOnline.delete(req.session.usuario);
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ success: false, message: 'Erro ao fazer logout' });
+      }
+      res.json({ success: true });
+    });
+  } else {
+    res.json({ success: true });
+  }
+});
+
+// Nova rota para verificar sessão
+app.get('/session', (req, res) => {
+  if (req.session && req.session.userId) {
+    return res.json({
+      success: true,
+      authenticated: true,
+      user: {
+        id: req.session.userId,
+        usuario: req.session.usuario,
+        nome: req.session.nome,
+        isAdmin: req.session.isAdmin
+      }
+    });
+  }
+  res.json({ success: true, authenticated: false });
 });
 
 app.get('/online', (_req, res) => res.json({ online: usuariosOnline.size }));
 
 // =====================
-// Usuários
+// Usuários (PROTEGIDO)
 // =====================
-app.post('/usuarios', (req, res) => {
+app.post('/usuarios', requireAdmin, (req, res) => {
   const { usuario, senha, nome, email } = req.body || {};
+  
+  // Hash da senha
+  const senhaHash = bcrypt.hashSync(senha, 10);
+  
   const sql = 'INSERT INTO usuarios (usuario, senha, nome, email) VALUES (?, ?, ?, ?)';
-  db.query(sql, [usuario, senha, nome, email], (err) => {
+  db.query(sql, [usuario, senhaHash, nome, email], (err) => {
     if (err) {
       if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ success: false, message: 'Usuário já existe!' });
       console.error('Erro /usuarios POST:', err.message);
@@ -151,7 +243,7 @@ app.post('/usuarios', (req, res) => {
   });
 });
 
-app.get('/usuarios', (req, res) => {
+app.get('/usuarios', requireAdmin, (req, res) => {
   const login = (req.query.login || '').trim();
   if (login) {
     db.query('SELECT id, usuario, nome, email FROM usuarios WHERE usuario = ?', [login], (err, rows) => {
@@ -166,7 +258,7 @@ app.get('/usuarios', (req, res) => {
   }
 });
 
-app.get('/usuarios/busca', (req, res) => {
+app.get('/usuarios/busca', requireAdmin, (req, res) => {
   let q = (req.query.q || '').trim();
   const listarTodos = q === '' || q === '*';
 
@@ -174,16 +266,15 @@ app.get('/usuarios/busca', (req, res) => {
   const params = [];
 
   if (!listarTodos) {
-  q = q.replace(/\s+/g, '');
-  if (/^\d+$/.test(q)) {
-    // se for número, pesquisa também por ID
-    sql += ' WHERE id = ? OR usuario LIKE ? OR usuario LIKE ?';
-    params.push(Number(q), q + '%', '%' + q + '%');
-  } else {
-    sql += ' WHERE usuario LIKE ? OR usuario LIKE ?';
-    params.push(q + '%', '%' + q + '%');
+    q = q.replace(/\s+/g, '');
+    if (/^\d+$/.test(q)) {
+      sql += ' WHERE id = ? OR usuario LIKE ? OR usuario LIKE ?';
+      params.push(Number(q), q + '%', '%' + q + '%');
+    } else {
+      sql += ' WHERE usuario LIKE ? OR usuario LIKE ?';
+      params.push(q + '%', '%' + q + '%');
+    }
   }
-}
 
   sql += ' ORDER BY usuario LIMIT 20';
 
@@ -196,28 +287,52 @@ app.get('/usuarios/busca', (req, res) => {
   });
 });
 
-app.put('/usuarios/:id', (req, res) => {
+app.put('/usuarios/:id', requireAdmin, (req, res) => {
   const { id } = req.params;
   const { usuario, senha, nome, email } = req.body || {};
-  const sql = 'UPDATE usuarios SET usuario = ?, senha = ?, nome = ?, email = ? WHERE id = ?';
-  db.query(sql, [usuario, senha, nome, email, id], (err) => {
+  
+  // Hash da senha se foi fornecida
+  const senhaHash = senha ? bcrypt.hashSync(senha, 10) : null;
+  
+  let sql, params;
+  if (senhaHash) {
+    sql = 'UPDATE usuarios SET usuario = ?, senha = ?, nome = ?, email = ? WHERE id = ?';
+    params = [usuario, senhaHash, nome, email, id];
+  } else {
+    sql = 'UPDATE usuarios SET usuario = ?, nome = ?, email = ? WHERE id = ?';
+    params = [usuario, nome, email, id];
+  }
+  
+  db.query(sql, params, (err) => {
     if (err) return res.status(500).json({ success: false });
     res.json({ success: true, message: 'Usuário atualizado com sucesso!' });
   });
 });
 
-app.put('/usuarios/login/:login', (req, res) => {
+app.put('/usuarios/login/:login', requireAdmin, (req, res) => {
   const { login } = req.params;
   const { usuario, senha, nome, email } = req.body || {};
-  const sql = 'UPDATE usuarios SET usuario = ?, senha = ?, nome = ?, email = ? WHERE usuario = ?';
-  db.query(sql, [usuario, senha, nome, email, login], (err, result) => {
+  
+  // Hash da senha se foi fornecida
+  const senhaHash = senha ? bcrypt.hashSync(senha, 10) : null;
+  
+  let sql, params;
+  if (senhaHash) {
+    sql = 'UPDATE usuarios SET usuario = ?, senha = ?, nome = ?, email = ? WHERE usuario = ?';
+    params = [usuario, senhaHash, nome, email, login];
+  } else {
+    sql = 'UPDATE usuarios SET usuario = ?, nome = ?, email = ? WHERE usuario = ?';
+    params = [usuario, nome, email, login];
+  }
+  
+  db.query(sql, params, (err, result) => {
     if (err) return res.status(500).json({ success: false, error: err.message });
     if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Usuário não encontrado' });
     res.json({ success: true, message: 'Usuário atualizado com sucesso!' });
   });
 });
 
-app.delete('/usuarios/:id', (req, res) => {
+app.delete('/usuarios/:id', requireAdmin, (req, res) => {
   db.query('DELETE FROM usuarios WHERE id = ?', [req.params.id], (err) => {
     if (err) return res.status(500).json({ success: false });
     res.json({ success: true, message: 'Usuário excluído com sucesso!' });
@@ -225,9 +340,9 @@ app.delete('/usuarios/:id', (req, res) => {
 });
 
 // =====================
-// Dispositivos (NOVO)
+// Dispositivos (PROTEGIDO)
 // =====================
-app.post('/dispositivos', (req, res) => {
+app.post('/dispositivos', requireAdmin, (req, res) => {
   const { serial } = req.body || {};
   
   if (!serial || !serial.trim()) {
@@ -260,7 +375,7 @@ app.post('/dispositivos', (req, res) => {
   });
 });
 
-app.get('/dispositivos', (req, res) => {
+app.get('/dispositivos', requireAdmin, (req, res) => {
   const sql = 'SELECT id, serial, criado_em FROM dispositivos ORDER BY criado_em DESC';
   db.query(sql, (err, rows) => {
     if (err) {
@@ -271,7 +386,7 @@ app.get('/dispositivos', (req, res) => {
   });
 });
 
-app.get('/dispositivos/:id', (req, res) => {
+app.get('/dispositivos/:id', requireAdmin, (req, res) => {
   const { id } = req.params;
   const sql = 'SELECT id, serial, criado_em FROM dispositivos WHERE id = ?';
   db.query(sql, [id], (err, rows) => {
@@ -286,7 +401,7 @@ app.get('/dispositivos/:id', (req, res) => {
   });
 });
 
-app.delete('/dispositivos/:id', (req, res) => {
+app.delete('/dispositivos/:id', requireAdmin, (req, res) => {
   const { id } = req.params;
   const sql = 'DELETE FROM dispositivos WHERE id = ?';
   db.query(sql, [id], (err, result) => {
@@ -302,11 +417,9 @@ app.delete('/dispositivos/:id', (req, res) => {
 });
 
 // =====================
-// Vínculos Usuário-Dispositivo (NOVO)
+// Vínculos Usuário-Dispositivo (PROTEGIDO)
 // =====================
-
-// Vincular dispositivo a usuário
-app.post('/usuario-dispositivos', (req, res) => {
+app.post('/usuario-dispositivos', requireAdmin, (req, res) => {
   const { usuario_login, serial, nome_plantacao } = req.body || {};
   
   if (!usuario_login || !serial || !nome_plantacao) {
@@ -316,7 +429,6 @@ app.post('/usuario-dispositivos', (req, res) => {
     });
   }
 
-  // Primeiro, buscar o ID do usuário pelo login
   db.query('SELECT id FROM usuarios WHERE usuario = ?', [usuario_login], (err, userRows) => {
     if (err) {
       console.error('Erro ao buscar usuário:', err.message);
@@ -329,7 +441,6 @@ app.post('/usuario-dispositivos', (req, res) => {
     
     const usuario_id = userRows[0].id;
     
-    // Buscar o ID do dispositivo pelo serial
     db.query('SELECT id FROM dispositivos WHERE serial = ?', [serial], (err, devRows) => {
       if (err) {
         console.error('Erro ao buscar dispositivo:', err.message);
@@ -345,7 +456,6 @@ app.post('/usuario-dispositivos', (req, res) => {
       
       const dispositivo_id = devRows[0].id;
       
-      // Inserir o vínculo
       const sql = 'INSERT INTO usuario_dispositivos (usuario_id, dispositivo_id, nome_plantacao) VALUES (?, ?, ?)';
       db.query(sql, [usuario_id, dispositivo_id, nome_plantacao], (err, result) => {
         if (err) {
@@ -369,23 +479,31 @@ app.post('/usuario-dispositivos', (req, res) => {
   });
 });
 
-// Listar dispositivos de um usuário
-app.get('/usuario-dispositivos/:usuario_login', (req, res) => {
+app.get('/usuario-dispositivos/:usuario_login', requireAuth, (req, res) => {
   const { usuario_login } = req.params;
+  
+  // Verificar se o usuário está tentando acessar seus próprios dados ou se é admin
+  if (req.session.usuario !== usuario_login && !req.session.isAdmin) {
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Você não tem permissão para acessar esses dados.' 
+    });
+  }
   
   const sql = `
     SELECT 
-      ud.id as vinculo_id,
-      ud.nome_plantacao,
-      ud.criado_em,
-      d.id as dispositivo_id,
-      d.serial
-    FROM usuario_dispositivos ud
-    INNER JOIN usuarios u ON ud.usuario_id = u.id
-    INNER JOIN dispositivos d ON ud.dispositivo_id = d.id
-    WHERE u.usuario = ?
-    ORDER BY ud.criado_em DESC
-  `;
+      d.id,
+      d.serialnumber,
+      d.fk_culturas,
+      d.fk_usuarios,
+      c.cultura as nome_cultura,
+      c.agua_litros_m2 as agua_necessaria,
+      c.frequencia_irrigacao_dias
+    FROM esp32_dispositivos d
+    LEFT JOIN culturas c ON d.fk_culturas = c.id
+    WHERE d.fk_usuarios = ?
+    ORDER BY d.criado_em DESC
+`;
   
   db.query(sql, [usuario_login], (err, rows) => {
     if (err) {
@@ -397,8 +515,7 @@ app.get('/usuario-dispositivos/:usuario_login', (req, res) => {
   });
 });
 
-// Remover vínculo
-app.delete('/usuario-dispositivos/:vinculo_id', (req, res) => {
+app.delete('/usuario-dispositivos/:vinculo_id', requireAdmin, (req, res) => {
   const { vinculo_id } = req.params;
   
   const sql = 'DELETE FROM usuario_dispositivos WHERE id = ?';
@@ -417,16 +534,19 @@ app.delete('/usuario-dispositivos/:vinculo_id', (req, res) => {
 });
 
 // =====================
-// Dados dos Sensores ESP32 (NOVO)
+// Dados dos Sensores ESP32 (PROTEGIDO)
 // =====================
-
-// Buscar dispositivos ESP32 de um usuário
-app.get('/esp32/dispositivos/:usuario_id', (req, res) => {
+app.get('/esp32/dispositivos/:usuario_id', requireAuth, (req, res) => {
   const { usuario_id } = req.params;
   
-  // ==================================================================
-  // CORREÇÃO FINAL APLICADA AQUI
-  // ==================================================================
+  // Verificar se o usuário está acessando seus próprios dispositivos ou se é admin
+  if (req.session.userId != usuario_id && !req.session.isAdmin) {
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Você não tem permissão para acessar esses dispositivos.' 
+    });
+  }
+  
   const sql = `
     SELECT 
       d.id,
@@ -452,75 +572,107 @@ app.get('/esp32/dispositivos/:usuario_id', (req, res) => {
   });
 });
 
-// Buscar dados mais recentes dos sensores de um dispositivo
-app.get('/esp32/sensores/:dispositivo_id/latest', (req, res) => {
+app.get('/esp32/sensores/:dispositivo_id/latest', requireAuth, (req, res) => {
   const { dispositivo_id } = req.params;
   
-  const sql = `
-    SELECT 
-      umidade_solo_bruto,
-      umidade_solo_perc,
-      umidade_ar,
-      temperatura,
-      criado_em,
-      update_em
-    FROM esp32_sensores
-    WHERE fk_esp32_dispositivos = ?
-    ORDER BY criado_em DESC
-    LIMIT 1
-  `;
-  
-  db.query(sql, [dispositivo_id], (err, rows) => {
+  // Verificar se o dispositivo pertence ao usuário logado
+  const checkSql = 'SELECT fk_usuarios FROM esp32_dispositivos WHERE id = ?';
+  db.query(checkSql, [dispositivo_id], (err, rows) => {
     if (err) {
-      console.error('Erro ao buscar dados dos sensores:', err.message);
+      console.error('Erro ao verificar propriedade do dispositivo:', err.message);
       return res.status(500).json({ success: false, error: err.message });
     }
     
     if (rows.length === 0) {
-      return res.json({ success: true, dados: null, message: 'Nenhuma leitura encontrada' });
+      return res.status(404).json({ success: false, message: 'Dispositivo não encontrado' });
     }
     
-    res.json({ success: true, dados: rows[0] });
+    if (rows[0].fk_usuarios != req.session.userId && !req.session.isAdmin) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Você não tem permissão para acessar esse dispositivo.' 
+      });
+    }
+    
+    const sql = `
+      SELECT 
+        umidade_solo_bruto,
+        umidade_solo_perc,
+        umidade_ar,
+        temperatura,
+        criado_em,
+        update_em
+      FROM esp32_sensores
+      WHERE fk_esp32_dispositivos = ?
+      ORDER BY criado_em DESC
+      LIMIT 1
+    `;
+    
+    db.query(sql, [dispositivo_id], (err, rows) => {
+      if (err) {
+        console.error('Erro ao buscar dados dos sensores:', err.message);
+        return res.status(500).json({ success: false, error: err.message });
+      }
+      
+      if (rows.length === 0) {
+        return res.json({ success: true, dados: null, message: 'Nenhuma leitura encontrada' });
+      }
+      
+      res.json({ success: true, dados: rows[0] });
+    });
   });
 });
 
-// Buscar histórico de leituras dos sensores (últimas 24h)
-app.get('/esp32/sensores/:dispositivo_id/historico', (req, res) => {
+app.get('/esp32/sensores/:dispositivo_id/historico', requireAuth, (req, res) => {
   const { dispositivo_id } = req.params;
   const { horas = 24 } = req.query;
   
-  const sql = `
-    SELECT 
-      umidade_solo_bruto,
-      umidade_solo_perc,
-      umidade_ar,
-      temperatura,
-      criado_em
-    FROM esp32_sensores
-    WHERE fk_esp32_dispositivos = ?
-      AND criado_em >= DATE_SUB(NOW(), INTERVAL ? HOUR)
-    ORDER BY criado_em ASC
-  `;
-  
-  db.query(sql, [dispositivo_id, horas], (err, rows) => {
+  // Verificar se o dispositivo pertence ao usuário logado
+  const checkSql = 'SELECT fk_usuarios FROM esp32_dispositivos WHERE id = ?';
+  db.query(checkSql, [dispositivo_id], (err, rows) => {
     if (err) {
-      console.error('Erro ao buscar histórico dos sensores:', err.message);
+      console.error('Erro ao verificar propriedade do dispositivo:', err.message);
       return res.status(500).json({ success: false, error: err.message });
     }
     
-    res.json({ success: true, historico: rows });
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Dispositivo não encontrado' });
+    }
+    
+    if (rows[0].fk_usuarios != req.session.userId && !req.session.isAdmin) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Você não tem permissão para acessar esse dispositivo.' 
+      });
+    }
+    
+    const sql = `
+      SELECT 
+        umidade_solo_bruto,
+        umidade_solo_perc,
+        umidade_ar,
+        temperatura,
+        criado_em
+      FROM esp32_sensores
+      WHERE fk_esp32_dispositivos = ?
+        AND criado_em >= DATE_SUB(NOW(), INTERVAL ? HOUR)
+      ORDER BY criado_em ASC
+    `;
+    
+    db.query(sql, [dispositivo_id, horas], (err, rows) => {
+      if (err) {
+        console.error('Erro ao buscar histórico dos sensores:', err.message);
+        return res.status(500).json({ success: false, error: err.message });
+      }
+      
+      res.json({ success: true, historico: rows });
+    });
   });
 });
 
 // =====================
 // Admin: logs
 // =====================
-function requireAdmin(req, res, next) {
-  const ok = req.headers['x-admin'] === '1' && usuariosOnline.has('admin');
-  if (!ok) return res.status(401).json({ success: false, error: 'não autorizado' });
-  next();
-}
-
 app.get('/admin/logins', requireAdmin, (req, res) => {
   const { usuario, sucesso, limit = 50, offset = 0 } = req.query;
   const params = [];
@@ -542,9 +694,48 @@ app.get('/admin/logins', requireAdmin, (req, res) => {
 });
 
 // =====================
+// Rota para migrar senhas existentes (executar uma vez)
+// =====================
+app.post('/admin/migrate-passwords', requireAdmin, (req, res) => {
+  const sql = 'SELECT id, usuario, senha FROM usuarios';
+  db.query(sql, (err, rows) => {
+    if (err) {
+      return res.status(500).json({ success: false, error: err.message });
+    }
+    
+    let migrated = 0;
+    let skipped = 0;
+    
+    rows.forEach(user => {
+      // Verificar se já é hash bcrypt
+      if (user.senha.startsWith('$2a$') || user.senha.startsWith('$2b$')) {
+        skipped++;
+        return;
+      }
+      
+      // Fazer hash da senha
+      const senhaHash = bcrypt.hashSync(user.senha, 10);
+      db.query('UPDATE usuarios SET senha = ? WHERE id = ?', [senhaHash, user.id], (err) => {
+        if (err) {
+          console.error(`Erro ao migrar senha do usuário ${user.usuario}:`, err.message);
+        } else {
+          migrated++;
+        }
+      });
+    });
+    
+    res.json({ 
+      success: true, 
+      message: `Migração iniciada. ${migrated} senhas serão migradas, ${skipped} já estavam em hash.` 
+    });
+  });
+});
+
+// =====================
 // Start
 // =====================
 app.listen(PORT, HOST, () => {
-  console.log(`Servidor rodando em http://${HOST}:${PORT}` );
+  console.log(`🚀 Servidor rodando em http://${HOST}:${PORT}`);
+  console.log(`🔒 Sistema de autenticação seguro ativado`);
 });
 

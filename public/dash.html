@@ -20,7 +20,7 @@
   <div class="content">
     <div id="cabecalhoUsuario" style="display: flex; justify-content: space-between; align-items: center; margin: 20px;">
       <h2 id="boasVindas" style="margin: 0;"></h2>
-      <button class="botao-logout" onclick="logout( )">Sair</button>
+      <button class="botao-logout" onclick="logout()">Sair</button>
     </div>
     
     <div id="mensagemSemDispositivo" style="text-align: center; margin-top: 50px; display: none;">
@@ -112,36 +112,64 @@
       }
     });
 
-    // Pegar usuário da URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const login = urlParams.get('user');
-    usuarioAtual = login;
-
-    // Buscar dados do usuário
-    fetch(`/usuarios?login=${encodeURIComponent(login)}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.length > 0) {
-          const user = data[0];
-          usuarioId = user.id;
-          document.getElementById('boasVindas').innerHTML = `Bem vindo <strong>${user.nome}</strong>`;
-          
-          // Carregar dispositivos do usuário
-          carregarDispositivos();
-        } else {
-          document.getElementById('boasVindas').innerText = `Usuário não encontrado.`;
+    // =====================
+    // VERIFICAÇÃO DE SESSÃO SEGURA
+    // =====================
+    async function verificarSessao() {
+      try {
+        const response = await fetch('/session', {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (!data.authenticated) {
+          // Não autenticado - redirecionar para login
+          alert('Você precisa fazer login para acessar esta página.');
+          window.location.href = '/login.html';
+          return null;
         }
-      })
-      .catch(() => {
-        document.getElementById('boasVindas').innerText = `Erro ao buscar dados do usuário.`;
-      });
+        
+        return data.user;
+      } catch (error) {
+        console.error('Erro ao verificar sessão:', error);
+        alert('Erro ao verificar autenticação. Redirecionando para login...');
+        window.location.href = '/login.html';
+        return null;
+      }
+    }
+
+    // Inicializar página
+    async function inicializar() {
+      // Verificar sessão
+      const user = await verificarSessao();
+      if (!user) return;
+      
+      usuarioAtual = user.usuario;
+      usuarioId = user.id;
+      
+      document.getElementById('boasVindas').innerHTML = `Bem vindo <strong>${user.nome}</strong>`;
+      
+      // Carregar dispositivos do usuário
+      carregarDispositivos();
+    }
 
     function carregarDispositivos() {
       if (!usuarioId) return;
       
-      fetch(`/esp32/dispositivos/${usuarioId}`)
-        .then(res => res.json())
+      fetch(`/esp32/dispositivos/${usuarioId}`, {
+        credentials: 'include'
+      })
+        .then(res => {
+          if (res.status === 401) {
+            alert('Sessão expirada. Faça login novamente.');
+            window.location.href = '/login.html';
+            return;
+          }
+          return res.json();
+        })
         .then(data => {
+          if (!data) return;
+          
           if (data.success && data.dispositivos.length > 0) {
             exibirListaDispositivos(data.dispositivos);
             document.getElementById('mensagemSemDispositivo').style.display = 'none';
@@ -212,9 +240,20 @@
     }
 
     function carregarDadosSensores(dispositivoId) {
-      fetch(`/esp32/sensores/${dispositivoId}/latest`)
-        .then(res => res.json())
+      fetch(`/esp32/sensores/${dispositivoId}/latest`, {
+        credentials: 'include'
+      })
+        .then(res => {
+          if (res.status === 401) {
+            alert('Sessão expirada. Faça login novamente.');
+            window.location.href = '/login.html';
+            return;
+          }
+          return res.json();
+        })
         .then(data => {
+          if (!data) return;
+          
           if (data.success && data.dados) {
             const d = data.dados;
             
@@ -222,10 +261,6 @@
             document.getElementById('umidadeSolo').innerText = d.umidade_solo_perc ? `${d.umidade_solo_perc}%` : '--%';
             document.getElementById('umidadeSoloBruto').innerText = `Valor bruto: ${d.umidade_solo_bruto || '---'}`;
             document.getElementById('umidadeAr').innerText = d.umidade_ar ? `${d.umidade_ar}%` : '--%';
-            
-            // ==================================================================
-            // CORREÇÃO APLICADA AQUI
-            // ==================================================================
             document.getElementById('temperatura').innerText = d.temperatura ? `${d.temperatura}°C` : '--°C';
             
             // Última atualização
@@ -262,9 +297,20 @@
     }
 
     function carregarHistorico(dispositivoId) {
-      fetch(`/esp32/sensores/${dispositivoId}/historico?horas=24`)
-        .then(res => res.json())
+      fetch(`/esp32/sensores/${dispositivoId}/historico?horas=24`, {
+        credentials: 'include'
+      })
+        .then(res => {
+          if (res.status === 401) {
+            alert('Sessão expirada. Faça login novamente.');
+            window.location.href = '/login.html';
+            return;
+          }
+          return res.json();
+        })
         .then(data => {
+          if (!data) return;
+          
           if (data.success && data.historico.length > 0) {
             const labels = [];
             const valores = [];
@@ -296,9 +342,26 @@
       if (window.intervalAtualizacao) {
         clearInterval(window.intervalAtualizacao);
       }
-      localStorage.removeItem('usuarioLogado');
-      window.location.href = 'login.html';
+      
+      fetch('/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(() => {
+        localStorage.removeItem('usuarioLogado');
+        window.location.href = '/login.html';
+      })
+      .catch(() => {
+        localStorage.removeItem('usuarioLogado');
+        window.location.href = '/login.html';
+      });
     }
+
+    // Inicializar ao carregar a página
+    inicializar();
   </script>
 </body>
 </html>

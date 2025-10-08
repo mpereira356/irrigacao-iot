@@ -1,9 +1,21 @@
 {
+  "name": "smartfarm-secure",
+  "version": "2.0.0",
+  "description": "SmartFarm AI - Sistema de Irrigação Inteligente com Autenticação Segura",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "migrate-passwords": "node migrate-passwords.js",
+    "test-security": "node test-security.js"
+  },
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
+    "express-session": "^1.18.0",
     "mysql": "^2.18.1",
     "mysql2": "^3.14.1"
   }
 }
+
