@@ -39,7 +39,6 @@ body{
   border-radius:16px;
   padding:20px;
   box-shadow: 0 10px 30px rgba(0,0,0,.35);
- 
 }
 
 /* ===== Tipografia ===== */
@@ -58,6 +57,7 @@ input, select{
   color:var(--text);
   border-radius:10px;
   outline:none;
+  font-size: 16px; /* evita zoom automático no mobile */
 }
 
 button{
@@ -115,9 +115,7 @@ button:active{ transform: translateY(1px); }
   padding:16px;
 }
 
-.card h3{
-  margin-top:0;
-}
+.card h3{ margin-top:0; }
 
 .help{
   font-size:12px;
@@ -150,7 +148,7 @@ button:active{ transform: translateY(1px); }
 }
 .filtros input,.filtros select,.filtros button{ flex:1; min-width:140px }
 
-/* ===== Responsivo ===== */
+/* ===== Responsivo (grid/admin) ===== */
 @media (max-width: 840px){
   .admin-grid{ grid-template-columns: 1fr; }
   .painel-head{ flex-direction:column; align-items:stretch }
@@ -159,46 +157,53 @@ button:active{ transform: translateY(1px); }
 /* ===== Heranças antigas (mantidas p/ compatibilidade) ===== */
 .login-box {
   width: 100%;
-  max-width: 800px;     /* largura máxima da caixa */
-  margin: auto;         /* centraliza horizontal */
-  margin-top: 8%;       /* joga um pouco pra baixo */
-  background: #0f2a25;  /* cor de fundo da caixa */
+  max-width: 800px;
+  margin: auto;
+  margin-top: 6%;
+  background: #0f2a25;
   border-radius: 12px;
   padding: 30px;
   box-shadow: 0 6px 18px rgba(0,0,0,0.4);
 }
 
-
-
 #listaUsuarios {
-  max-height: 400px;   /* limite da altura da lista */
-  overflow-y: auto;    /* rolagem interna */
-  padding-right: 5px;  /* espaço para o scroll */
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 5px;
 }
 
 .admin-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  height: calc(100vh - 150px); /* usa quase toda a altura da tela */
+  height: calc(100vh - 150px);
 }
 
-.card {
-  overflow-y: auto; /* se o conteúdo de um card passar do limite, ativa scroll */
+.card { overflow-y: auto; }
+
+/* LOGIN SECTION — FIX MOBILE  */
+.login-section{
+  width: 100%;          /* ← antes era 700px fixo */
+  max-width: 700px;     /* limite no desktop */
+  margin: 6% auto;      /* centraliza */
 }
 
-/* só a section do login */
-.login-section {
-   /* largura máxima do box de login */
-  width: 700px;
-  margin: auto;
-  margin-top: 8%;     /* joga um pouco pra baixo */
+/* =================== MOBILE TWEAKS =================== */
+@media (max-width: 600px){
+  body{ padding: 20px 12px; }
+  .section{ padding:16px; }
+  .login-box{
+    margin-top: 4%;
+    padding: 22px;
+  }
+  h1{ font-size:24px }
+  h2{ font-size:20px }
+  input, select{ padding:11px 10px; }
+  button{ padding: 12px; }
+  .admin-grid{ height:auto; grid-template-columns: 1fr; }
 }
-#mensagem,
-#msgAlteracao {
-  margin-top: 12px;   /* cria espaço acima da mensagem */
-  display: block;     /* garante que fica em linha própria */
-  font-size: 14px;
-  color: #ccc;        /* ou a cor que você quiser */
+@media (max-width: 380px){
+  .login-box{ padding:18px; }
+  h1{ font-size:22px }
+  h2{ font-size:18px }
 }
-
