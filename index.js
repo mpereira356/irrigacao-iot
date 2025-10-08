@@ -671,6 +671,233 @@ app.get('/esp32/sensores/:dispositivo_id/historico', requireAuth, (req, res) => 
 });
 
 // =====================
+// Configurações do Usuário (PROTEGIDO)
+// =====================
+
+// Obter dados do perfil do usuário logado
+app.get('/usuario/perfil', requireAuth, (req, res) => {
+  const sql = 'SELECT id, usuario, nome, email FROM usuarios WHERE id = ?';
+  db.query(sql, [req.session.userId], (err, rows) => {
+    if (err) {
+      console.error('Erro ao buscar perfil:', err.message);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Usuário não encontrado' });
+    }
+    
+    res.json({ success: true, perfil: rows[0] });
+  });
+});
+
+// Atualizar perfil do usuário
+app.put('/usuario/perfil', requireAuth, (req, res) => {
+  const { nome, email } = req.body;
+  
+  if (!nome || !email) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Nome e email são obrigatórios' 
+    });
+  }
+  
+  // Verificar se o email já está em uso por outro usuário
+  const checkEmailSql = 'SELECT id FROM usuarios WHERE email = ? AND id != ?';
+  db.query(checkEmailSql, [email, req.session.userId], (err, rows) => {
+    if (err) {
+      console.error('Erro ao verificar email:', err.message);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+    
+    if (rows.length > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Este email já está em uso por outro usuário' 
+      });
+    }
+    
+    // Atualizar perfil
+    const updateSql = 'UPDATE usuarios SET nome = ?, email = ? WHERE id = ?';
+    db.query(updateSql, [nome, email, req.session.userId], (err, result) => {
+      if (err) {
+        console.error('Erro ao atualizar perfil:', err.message);
+        return res.status(500).json({ success: false, error: err.message });
+      }
+      
+      // Atualizar nome na sessão
+      req.session.nome = nome;
+      
+      res.json({ 
+        success: true, 
+        message: 'Perfil atualizado com sucesso!',
+        perfil: { nome, email }
+      });
+    });
+  });
+});
+
+// Trocar senha
+app.put('/usuario/senha', requireAuth, (req, res) => {
+  const { senhaAtual, novaSenha, confirmarSenha } = req.body;
+  
+  if (!senhaAtual || !novaSenha || !confirmarSenha) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Todos os campos são obrigatórios' 
+    });
+  }
+  
+  if (novaSenha !== confirmarSenha) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'A nova senha e a confirmação não coincidem' 
+    });
+  }
+  
+  if (novaSenha.length < 6) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'A nova senha deve ter no mínimo 6 caracteres' 
+    });
+  }
+  
+  // Buscar senha atual do usuário
+  const sql = 'SELECT senha FROM usuarios WHERE id = ?';
+  db.query(sql, [req.session.userId], (err, rows) => {
+    if (err) {
+      console.error('Erro ao buscar usuário:', err.message);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Usuário não encontrado' });
+    }
+    
+    const senhaHash = rows[0].senha;
+    
+    // Verificar senha atual
+    const senhaValida = senhaHash.startsWith('$2a$') || senhaHash.startsWith('$2b$') 
+      ? bcrypt.compareSync(senhaAtual, senhaHash)
+      : senhaAtual === senhaHash;
+    
+    if (!senhaValida) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Senha atual incorreta' 
+      });
+    }
+    
+    // Hash da nova senha
+    const novaSenhaHash = bcrypt.hashSync(novaSenha, 10);
+    
+    // Atualizar senha
+    const updateSql = 'UPDATE usuarios SET senha = ? WHERE id = ?';
+    db.query(updateSql, [novaSenhaHash, req.session.userId], (err) => {
+      if (err) {
+        console.error('Erro ao atualizar senha:', err.message);
+        return res.status(500).json({ success: false, error: err.message });
+      }
+      
+      res.json({ 
+        success: true, 
+        message: 'Senha alterada com sucesso!' 
+      });
+    });
+  });
+});
+
+
+
+// =====================
+// Projeção de Irrigação (PROTEGIDO)
+// =====================
+app.get('/esp32/projecao/:dispositivo_id', requireAuth, (req, res) => {
+  const { dispositivo_id } = req.params;
+  
+  // Verificar se o dispositivo pertence ao usuário logado
+  const checkSql = `
+    SELECT 
+      d.fk_usuarios,
+      c.frequencia_irrigacao_dias,
+      c.agua_litros_m2
+    FROM esp32_dispositivos d
+    LEFT JOIN culturas c ON d.fk_culturas = c.id
+    WHERE d.id = ?
+  `;
+  
+  db.query(checkSql, [dispositivo_id], (err, rows) => {
+    if (err) {
+      console.error('Erro ao verificar propriedade do dispositivo:', err.message);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Dispositivo não encontrado' });
+    }
+    
+    if (rows[0].fk_usuarios != req.session.userId && !req.session.isAdmin) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Você não tem permissão para acessar esse dispositivo.' 
+      });
+    }
+    
+    const frequencia = rows[0].frequencia_irrigacao_dias;
+    const aguaPorM2 = rows[0].agua_litros_m2;
+    
+    // Buscar a última irrigação registrada (considerando quando a umidade estava alta)
+    // Vamos buscar o último registro com umidade > 80% como indicativo de irrigação
+    const sqlUltimaIrrigacao = `
+      SELECT criado_em, umidade_solo_perc
+      FROM esp32_sensores
+      WHERE fk_esp32_dispositivos = ?
+        AND umidade_solo_perc >= 80
+      ORDER BY criado_em DESC
+      LIMIT 1
+    `;
+    
+    db.query(sqlUltimaIrrigacao, [dispositivo_id], (err, irrigacaoRows) => {
+      if (err) {
+        console.error('Erro ao buscar última irrigação:', err.message);
+        return res.status(500).json({ success: false, error: err.message });
+      }
+      
+      let dataProximaIrrigacao = null;
+      let diasRestantes = null;
+      
+      if (irrigacaoRows.length > 0 && frequencia) {
+        const ultimaIrrigacao = new Date(irrigacaoRows[0].criado_em);
+        dataProximaIrrigacao = new Date(ultimaIrrigacao);
+        dataProximaIrrigacao.setDate(dataProximaIrrigacao.getDate() + frequencia);
+        
+        // Calcular dias restantes
+        const hoje = new Date();
+        const diffTime = dataProximaIrrigacao - hoje;
+        diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      }
+      
+      // Buscar área cultivada (assumindo 100m² como padrão se não houver registro)
+      // Você pode adicionar um campo na tabela esp32_dispositivos para armazenar a área
+      const areaCultivada = 100; // m² - valor padrão
+      const quantidadeAgua = aguaPorM2 ? (aguaPorM2 * areaCultivada) : null;
+      
+      res.json({
+        success: true,
+        projecao: {
+          data_proxima_irrigacao: dataProximaIrrigacao,
+          dias_restantes: diasRestantes,
+          quantidade_agua_litros: quantidadeAgua,
+          area_cultivada_m2: areaCultivada,
+          agua_por_m2: aguaPorM2,
+          frequencia_dias: frequencia
+        }
+      });
+    });
+  });
+});
+
+// =====================
 // Admin: logs
 // =====================
 app.get('/admin/logins', requireAdmin, (req, res) => {
