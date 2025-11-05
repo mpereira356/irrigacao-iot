@@ -4,29 +4,31 @@
   <meta charset="UTF-8" />
   <title>Login - SmartFarm</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="login.css" />
+  <link id="theme-link" rel="stylesheet" href="login.css" />
   <style>.hidden{display:none}</style>
 </head>
 <body>
   <div class="shell">
     <!-- LOGIN -->
-    <div id="loginBox" class="section login-section">
-      <h1>SmartFarm</h1>
+    <div id="loginBox" class="section login-section text-center">
+      <button id="theme-toggle" onclick="toggleTheme()" class="btn-secondary" style="position: absolute; top: 10px; right: 10px; width: auto; padding: 8px 12px; font-size: 12px;">Tema Dark</button>
+      <h1 class="text-primary">SmartFarm</h1>
       <p>Login do Usuário</p>
-      <input type="text" id="user" placeholder="Login" />
-      <input type="password" id="pass" placeholder="Senha" style="text-indent:10px" />
+      <input type="text" id="user" placeholder="Login" onkeydown="handleLoginKey(event)" />
+      <input type="password" id="pass" placeholder="Senha" onkeydown="handleLoginKey(event)" />
       <button onclick="login()">Entrar</button>
     </div>
 
     <!-- PAINEL (aparece após login) -->
-    <div id="painelUsuario" class="section hidden">
+    <div id="painelUsuario" class="section hidden" style="padding: 20px;">
       <div class="painel-head">
         <div>
-          <h2>Painel Admin</h2>
-          <p id="mensagemLogin"></p>
+          <h2 class="text-light">Painel Admin</h2>
+          <p id="mensagemLogin" class="text-primary"></p>
         </div>
-        <div style="min-width:220px">
-          <button onclick="logout()">Sair</button>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <button id="theme-toggle-panel" onclick="toggleTheme()" class="btn-secondary" style="width: auto; padding: 8px 12px; font-size: 12px;">Tema Dark</button>
+          <button onclick="logout()" class="btn-secondary">Sair</button>
         </div>
       </div>
       <div id="adminArea" class="admin-grid"></div>
@@ -34,15 +36,13 @@
   </div>
 
 <!-- Modal Confirmar (SIM/Não) -->
-<div id="confirmModal" style="display:none; position:fixed; inset:0; z-index:9999;
-  background: rgba(0,0,0,.55); align-items:center; justify-content:center;">
-  <div style="background:#0b1715; color:#e8fff6; width:min(420px, calc(100% - 32px));
-      border:1px solid #243a35; border-radius:14px; box-shadow:0 20px 60px rgba(0,0,0,.6);">
-    <div style="padding:18px 18px 8px; font-weight:700; font-size:16px;">Confirmação</div>
-    <div id="confirmText" style="padding:0 18px 18px; opacity:.9; line-height:1.4;"></div>
-    <div style="display:flex; gap:10px; justify-content:flex-end; padding:12px 14px; background:#081210; border-top:1px solid #243a35; border-radius:0 0 14px 14px;">
-      <button id="btnNao" style="padding:10px 16px; border-radius:10px; border:1px solid #344a45; background:#12221e; color:#e8fff6;">Não</button>
-      <button id="btnSim" style="padding:10px 16px; border-radius:10px; border:1px solid #0aa089; background:#15e0b8; color:#04201a; font-weight:700;">SIM</button>
+<div id="confirmModal" style="display:none; position:fixed; inset:0; z-index:9999; background: rgba(0,0,0,.7); align-items:center; justify-content:center;">
+<div style="width:min(420px, calc(100% - 32px)); border-radius:14px;">
+    <div style="padding:18px 18px 8px; font-weight:700; font-size:18px; border-bottom: 1px solid var(--border-color);">Confirmação</div>
+    <div id="confirmText" style="padding:15px 18px 18px; line-height:1.5; color: var(--text-muted);"></div>
+    <div style="display:flex; gap:10px; justify-content:flex-end; padding:12px 14px; border-radius:0 0 14px 14px;">
+      <button id="btnNao" class="btn-secondary" style="padding:10px 16px; width: auto;">Não</button>
+      <button id="btnSim" style="padding:10px 16px; width: auto;">SIM</button>
     </div>
   </div>
 </div>
@@ -50,7 +50,53 @@
 <script>
   let dispositivoAbertoId = null;
 
+  // Lógica de Alternância de Tema
+  function toggleTheme() {
+    const link = document.getElementById('theme-link');
+    const toggleBtnLogin = document.getElementById('theme-toggle');
+    const toggleBtnPanel = document.getElementById('theme-toggle-panel');
+    
+    let currentTheme = link.getAttribute('href');
+    let newTheme = '';
+    let newText = '';
+
+    if (currentTheme === 'login.css') {
+      newTheme = 'login_dark.css';
+      newText = 'Tema Claro';
+    } else {
+      newTheme = 'login.css';
+      newText = 'Tema Dark';
+    }
+
+    link.setAttribute('href', newTheme);
+    localStorage.setItem('theme', newTheme);
+    
+    if (toggleBtnLogin) toggleBtnLogin.innerText = newText;
+    if (toggleBtnPanel) toggleBtnPanel.innerText = newText;
+  }
+
+  // Aplica o tema salvo ao carregar
+  document.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme && savedTheme !== 'login.css') {
+      document.getElementById('theme-link').setAttribute('href', savedTheme);
+      const toggleBtnLogin = document.getElementById('theme-toggle');
+      const toggleBtnPanel = document.getElementById('theme-toggle-panel');
+      
+      if (toggleBtnLogin) toggleBtnLogin.innerText = 'Tema Claro';
+      if (toggleBtnPanel) toggleBtnPanel.innerText = 'Tema Claro';
+    }
+  });
+
   // Confirm customizado com "SIM/Não"
+
+  // Função para lidar com a tecla Enter no login
+  function handleLoginKey(event) {
+    if (event.key === 'Enter') {
+      event.preventDefault(); // Evita o comportamento padrão (se houver)
+      login();
+    }
+  }
 function confirmar(msg){
   return new Promise(resolve=>{
     const modal = document.getElementById('confirmModal');
@@ -160,11 +206,11 @@ window.onload = () => {
 
 /* ------------ UI helpers ------------ */
 function sectionCard(html){
-  const wrap = document.createElement('div');
-  wrap.className = 'card';
-  wrap.innerHTML = html;
-  return wrap;
-}
+	  const wrap = document.createElement('div');
+	  wrap.className = 'card';
+	  wrap.innerHTML = `<div class="card-content">${html}</div>`; // Adiciona a div card-content
+	  return wrap;
+	}
 
 /* =======================
    Montagem do Painel Admin
@@ -177,7 +223,7 @@ function montarPainelAdmin() {
   // CARD 1: Cadastro
   grid.appendChild(sectionCard(`
     <h3>Cadastro</h3>
-    <p id="usuariosOnline" class="help">Usuários online: carregando...</p>
+    <p id="usuariosOnline" class="help text-primary">Usuários online: carregando...</p>
     <input type="text" id="nomeUsuario" placeholder="Nome do novo usuário">
     <input type="email" id="emailUsuario" placeholder="E-mail do novo usuário">
     <input type="text" id="novoUsuario" placeholder="Login do novo usuário">
@@ -189,16 +235,16 @@ function montarPainelAdmin() {
   // CARD 2: Alterar/Excluir
   grid.appendChild(sectionCard(`
     <h3>Alterar Usuário</h3>
-    <p class="help">* Digite para filtrar; deixe vazio para listar todos.</p>
+    <p class="help text-muted">* Digite para filtrar; deixe vazio para listar todos.</p>
     <input type="text" id="usuarioBusca" placeholder="Login do usuário a alterar" oninput="filtrarUsuarios()" autocomplete="off">
-    <div id="listaUsuarios"></div>
-    <div id="formAlteracao" style="margin-top: 10px; display: none;">
+    <div id="listaUsuarios" style="max-height: 300px; overflow-y: auto; padding-right: 5px;"></div>
+    <div id="formAlteracao" style="display: none;">
       <input type="text" id="novoNome" placeholder="Novo nome">
       <input type="text" id="novoEmail" placeholder="Novo email">
       <input type="text" id="novoLogin" placeholder="Novo login">
       <input type="password" id="novaSenhaAlterar" placeholder="Nova senha (obrigatória p/ atualizar)">
       <button onclick="atualizarUsuario()">Salvar alterações</button>
-      <button onclick="excluirUsuarioPorLogin()" style="margin-top: 8px; background-color:#ff4444; width:100%; color:#fff;">Excluir usuário</button>
+      <button onclick="excluirUsuarioPorLogin()" class="btn-danger" style="margin-top: 8px;">Excluir usuário</button>
       <p id="msgAlteracao" class="help"></p>
     </div>
   `));
@@ -208,13 +254,14 @@ function montarPainelAdmin() {
     <h3>Gerenciar Dispositivos</h3>
 
     <div class="disp-toolbar">
-      <button id="btnAtualizarDisps" class="btn">Atualizar lista</button>
+      <button id="btnAtualizarDisps">Atualizar lista</button>
       <input id="novoSerial" type="text" placeholder="Serial do ESP32">
-      <button id="btnAddSerial" class="btn">Adicionar dispositivo</button>
+      <button id="btnAddSerial">Adicionar dispositivo</button>
     </div>
 
-    <div id="listaDispositivos" style="margin-top:10px"></div>
-    <small style="opacity:.7">Mostrando somente dispositivos vinculados a algum usuário.</small>
+        <div id="listaDispositivos" style="margin-top:10px; max-height: 300px; overflow-y: auto; padding-right: 5px;"></div>
+    <small class="text-muted">Mostrando somente dispositivos vinculados a algum usuário.</small>
+
   `));
 
   // CARD 4: Logs
@@ -230,7 +277,7 @@ function montarPainelAdmin() {
       <button onclick="toggleLogs()">Mostrar / Ocultar</button>
       <button onclick="carregarLogs()">Atualizar</button>
     </div>
-    <div id="logsContainer" style="display:none">
+    <div id="logsContainer" style="display:none; margin-top: 15px;">
       <div id="logsArea"></div>
     </div>
   `));
@@ -688,3 +735,4 @@ function carregarLogs(){
 </script>
 </body>
 </html>
+

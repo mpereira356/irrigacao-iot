@@ -1,24 +1,24 @@
 /* ===== Base ===== */
 :root{
-  /* Paleta de cores do usuário: #96A78D, #B6CEB4, #D9E9CF, #F0F0F0 */
-  --color-primary: #96A78D; /* Verde-oliva escuro (Destaque/Botões Principais) */
-  --color-primary-dark: #7B8C72; /* Versão mais escura para hover */
-  --color-secondary: #B6CEB4; /* Verde-claro médio (Botões Secundários/Elementos de Fundo) */
-  --color-success: #28a745; /* Verde padrão para sucesso (mantido) */
-  --color-danger: #dc3545; /* Vermelho padrão para perigo/excluir (mantido) */
-  
-  /* Fundo e painéis (Tema Claro - Orgânico com Fundo Verde Suave) */
-  --bg-dark: #D9E9CF; /* Fundo principal (Verde-claro muito suave) */
-  --bg-panel: #FFFFFF; /* Fundo do painel/card (Branco puro) */
-  --bg-card: #FFFFFF; /* Fundo do card mais escuro (Branco puro) */
-  --text-light: #343a40; /* Texto principal (Escuro) */
-  --text-muted: #6c757d; /* Texto secundário (Cinza) */
-  --border-color: #B6CEB4; /* Cor da borda (Verde-claro médio) */
-  
+  /* Paleta de cores mais sóbria e profissional (Tema Escuro) */
+  --color-primary: #96A78D;      /* Destaque/botões */
+  --color-primary-dark: #7c8b75; /* Hover do primary */
+  --color-secondary: #B6CEB4;    /* Títulos/bordas */
+  --color-success: #28a745;      /* Sucesso */
+  --color-danger: #dc3545;       /* Erro */
+
+  /* Fundo e painéis */
+  --bg-dark: #1E1E1E;            /* Fundo principal */
+  --bg-panel: #262826;           /* Painéis/cards */
+  --bg-card: #262826;            /* Cards */
+  --text-light: #F0F0F0;         /* Texto principal */
+  --text-muted: #B0B0B0;         /* Texto secundário */
+  --border-color: #3A3A3A;       /* Borda */
+
   /* Sombras */
-  --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-  --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.15);
+  --shadow-sm: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+  --shadow-md: 0 0.5rem 1rem rgba(0,0,0,0.15);
+  --shadow-lg: 0 1rem 3rem rgba(0,0,0,0.175);
 }
 
 *{box-sizing:border-box}
@@ -30,7 +30,7 @@ html,body{
 body{
   margin:0;
   font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* Fonte mais moderna */
-  background-color: var(--bg-dark); /* Fundo Verde Suave */
+  background-color: var(--bg-dark);
   color: var(--text-light);
   display:flex;
   justify-content:center;
@@ -47,7 +47,7 @@ body{
 
 /* Caixas padrão (login ou painéis) */
 .section{
-  background: var(--bg-panel); /* Fundo do painel principal (Branco Puro) */
+  background: var(--bg-panel);
   border:1px solid var(--border-color);
   border-radius:12px; /* Bordas mais suaves */
   padding:30px; /* Mais padding */
@@ -57,7 +57,7 @@ body{
 /* ===== Tipografia ===== */
 h1{ font-size:32px; margin:0 0 8px; font-weight: 600; color: var(--color-primary); }
 h2{ font-size:24px; margin:0 0 16px; font-weight: 500; color: var(--text-light); }
-h3{ font-size:18px; margin:0 0 12px; font-weight: 600; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; color: var(--color-primary); } /* Títulos de Card em Verde Escuro */
+h3{ font-size:18px; margin:0 0 12px; font-weight: 500; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; color: var(--text-light); }
 p{ margin:6px 0 14px; color: var(--text-muted); }
 
 /* ===== Campos / botões ===== */
@@ -66,7 +66,7 @@ input, select{
   padding:12px 15px;
   margin:8px 0;
   border:1px solid var(--border-color);
-  background: var(--bg-card); /* Fundo do input em Branco Puro */
+  background: var(--bg-card); /* Fundo do input mais escuro que o painel */
   color:var(--text-light);
   border-radius:8px;
   font-size: 16px;
@@ -75,7 +75,7 @@ input, select{
 
 input:focus, select:focus {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 0.2rem rgba(150, 167, 141, 0.5); /* Sombra com a cor primária */
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
     outline: none;
     background: var(--bg-card);
     color: var(--text-light);
@@ -122,10 +122,10 @@ button:active{ transform: translateY(1px); }
 }
 .btn-secondary {
   background-color: var(--color-secondary);
-  color: var(--text-light); /* Texto escuro para contraste no botão claro */
+  color: #fff;
 }
 .btn-secondary:hover {
-  background-color: #A0B89C;
+  background-color: #5a6268;
 }
 
 /* ===== Login Section ===== */
@@ -137,7 +137,7 @@ button:active{ transform: translateY(1px); }
   text-align: center;
 }
 .login-section h1 {
-  color: var(--color-primary);
+  color: var(--text-light);
   font-size: 36px;
   margin-bottom: 4px;
 }
@@ -164,10 +164,10 @@ button:active{ transform: translateY(1px); }
   width: auto;
   padding: 8px 16px;
   background-color: var(--color-secondary);
-  color: var(--text-light);
+  color: #fff;
 }
 .painel-head button:hover {
-  background-color: #A0B89C;
+  background-color: #5a6268;
 }
 
 .admin-grid{
@@ -177,7 +177,7 @@ button:active{ transform: translateY(1px); }
 }
 
 .card{
-  background: var(--bg-card); /* Fundo do card em Branco Puro */
+  background: var(--bg-card);
   border:1px solid var(--border-color);
   border-radius:10px;
   padding:20px;
@@ -187,7 +187,7 @@ button:active{ transform: translateY(1px); }
   display: flex;
   flex-direction: column;
 }
-.card h3{ margin-top:0; color: var(--color-primary); } /* Títulos de Card em Verde Escuro */
+.card h3{ margin-top:0; color: var(--text-light); }
 .card-content { flex-grow: 1; } /* Conteúdo flexível */
 
 .help{
@@ -202,7 +202,7 @@ button:active{ transform: translateY(1px); }
 #logsArea{
   max-height:300px; /* Aumenta a altura */
   overflow-y:auto;
-  background: var(--bg-card); /* Fundo do log em Branco Puro */
+  background: var(--bg-dark);
   padding:15px;
   border-radius:8px;
   border:1px solid var(--border-color);
@@ -235,7 +235,7 @@ button:active{ transform: translateY(1px); }
   justify-content:space-between;
   align-items: center;
   gap:10px;
-  background-color: var(--bg-card); /* Fundo do item em Branco Puro */
+  background-color: var(--bg-dark);
   padding:10px 15px;
   margin-top:8px;
   border-radius:6px;
@@ -243,7 +243,7 @@ button:active{ transform: translateY(1px); }
   transition: background-color 0.2s;
 }
 .usuario-item:hover {
-  background-color: #F0F0F0; /* Levemente mais escuro no hover */
+  background-color: #23262a;
 }
 .usuario-item button{
   background-color: var(--color-danger);
@@ -281,7 +281,7 @@ button:active{ transform: translateY(1px); }
 
 /* Dispositivos */
 .disp-item{
-  background: var(--bg-card); /* Fundo do item em Branco Puro */
+  background: var(--bg-dark);
   border:1px solid var(--border-color);
   border-radius:8px;
   margin:8px 0;
@@ -298,7 +298,7 @@ button:active{ transform: translateY(1px); }
   gap:12px;
   padding:12px 15px;
   cursor:pointer;
-  background-color: var(--color-secondary);
+  background-color: #23262a;
   color: var(--text-light);
 }
 .disp-title{
@@ -353,7 +353,7 @@ button:active{ transform: translateY(1px); }
   padding:10px 15px;
   border-radius:6px;
   border:1px solid var(--border-color);
-  background: var(--bg-card); /* Fundo do input em Branco Puro */
+  background: var(--bg-card);
   color:var(--text-light);
 }
 
@@ -376,7 +376,7 @@ button:active{ transform: translateY(1px); }
 }
 #confirmModal #btnNao {
   background: var(--color-secondary) !important;
-  color: var(--text-light) !important;
+  color: #fff !important;
   border: none !important;
 }
 #confirmModal #btnSim {
