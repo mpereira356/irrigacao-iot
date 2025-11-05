@@ -81,6 +81,7 @@
     <h1>SmartFarm</h1>
     <p>Irrigação Inteligente</p>
     
+    <button id="btnAddDisp" class="botao-add" style="margin-top:10px;margin-bottom:10px;background:#00ffc3;color:#0a1f1a;border:0;border-radius:6px;padding:10px 12px;font-weight:700;cursor:pointer">➕ Adicionar dispositivo</button>    
     <div id="listaDispositivos" style="margin-top: 20px;">
       <p style="font-size: 12px; opacity: 0.7;">Carregando dispositivos...</p>
     </div>
@@ -91,6 +92,8 @@
       <h2 id="boasVindas" style="margin: 0;"></h2>
       <div style="display: flex; gap: 10px;">
         <button id="btnAbrirConfig" class="botao-config" style="background-color: #2a4a42; color: #fff; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s;">⚙️ Configurações</button>
+
+
         <button class="botao-logout" onclick="logout()">Sair</button>
       </div>
     </div>
@@ -104,6 +107,10 @@
       <div id="infoDispositivo" style="margin-bottom: 20px; padding: 15px; background-color: #122b26; border-radius: 10px;">
         <h3 id="nomeDispositivo" style="margin: 0 0 5px 0;">Carregando...</h3>
         <p id="serialDispositivo" style="margin: 0; font-size: 12px; opacity: 0.7;">Serial: ---</p>
+
+                <!-- Botão Editar -->
+        <button id="btnEditarDisp" class="botao-config" style="background:#2a4a42;color:#fff;padding:10px 20px;border:0;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600">✏️ Editar</button>
+
       </div>
 
       <div class="cards">
@@ -214,6 +221,81 @@
     </div>
   </div>
 
+<div id="modalDispositivo" class="modal">
+  <div class="modal-content">
+    <span class="close" id="fecharModalDisp">&times;</span>
+    <h2 id="tituloModalDisp">➕ Adicionar dispositivo</h2>
+    <div id="alertDisp"></div>
+
+    <form id="formDispositivo">
+      <input type="hidden" id="dispId">
+
+      <div class="form-group">
+        <label for="dispSerial" style="font-weight:600;">Serial</label>
+        <input
+          id="dispSerial"
+          name="serialnumber"
+          type="text"
+          class="campo-input"
+          placeholder="Serial do dispositivo"
+
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="dispCultura">Cultura *</label>
+        <select id="dispCultura" required></select>
+        <small class="hint" style="opacity:.7">
+          Usado para água (L/m²) e frequência de irrigação.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="dispCEP">CEP *</label>
+        <input type="text" id="dispCEP" placeholder="00000-000" required>
+      </div>
+
+      <div class="form-group">
+        <label for="dispRua">Rua *</label>
+        <input type="text" id="dispRua" required>
+      </div>
+
+      <div class="form-group">
+        <label for="dispNumero">Número (opcional)</label>
+        <input type="text" id="dispNumero">
+      </div>
+
+      <div class="form-group">
+        <label for="dispBairro">Bairro *</label>
+        <input type="text" id="dispBairro" required>
+      </div>
+
+      <div class="form-group">
+        <label for="dispCidade">Cidade *</label>
+        <input type="text" id="dispCidade" required>
+      </div>
+
+      <div class="form-group">
+        <label for="dispEstado">Estado (UF) *</label>
+        <input type="text" id="dispEstado" maxlength="2" required>
+      </div>
+
+      <small style="opacity:.7">A latitude/longitude serão preenchidas automaticamente pelo endereço.</small>
+
+      <div style="margin-top:14px">
+        <button type="submit" class="btn" id="btnSalvarDisp">Salvar</button>
+      </div>
+
+      <button type="button" id="btnExcluirDisp" class="btn" 
+        style="background:#ff4444;color:#fff;margin-top:10px;display:none;">
+        🗑️ Excluir dispositivo
+      </button>
+
+    </form>
+  </div>
+</div>
+
+
   <script>
     let usuarioAtual = null;
     let usuarioId = null;
@@ -244,22 +326,43 @@
     // VERIFICAÇÃO DE SESSÃO SEGURA
     // =====================
     async function verificarSessao() {
-      try {
-        const response = await fetch('/session', { credentials: 'include' });
-        const data = await response.json();
-        if (!data.authenticated) {
-          alert('Você precisa fazer login para acessar esta página.');
-          window.location.href = '/login.html';
-          return null;
-        }
-        return data.user;
-      } catch (error) {
-        console.error('Erro ao verificar sessão:', error);
-        alert('Erro ao verificar autenticação. Redirecionando para login...');
-        window.location.href = '/login.html';
-        return null;
+  try {
+    const response = await fetch('/session', { credentials: 'include' });
+    const data = await response.json();
+
+    if (!data.authenticated) {
+      alert('Você precisa fazer login para acessar esta página.');
+      window.location.href = '/login.html';
+      return null;
+    }
+
+    // aceita tanto data.user quanto campos soltos (usuario/nome/id/isAdmin)
+    const user = data.user || {
+      id: data.id,
+      usuario: data.usuario,
+      nome: data.nome,
+      isAdmin: data.isAdmin
+    };
+
+    // se ainda faltar id, tenta pegar do localStorage como fallback
+    if (!user || user.id == null) {
+      const ls = JSON.parse(localStorage.getItem('usuarioLogado') || 'null');
+      if (ls && ls.id != null) {
+        user.id = ls.id;
+        user.usuario = user.usuario || ls.usuario;
+        user.nome = user.nome || ls.nome;
+        user.isAdmin = user.isAdmin ?? ls.isAdmin;
       }
     }
+
+    return user;
+  } catch (error) {
+    console.error('Erro ao verificar sessão:', error);
+    alert('Falha ao verificar sessão. Faça login novamente.');
+    window.location.href = '/login.html';
+    return null;
+  }
+}
 
     // Inicializar página
     async function inicializar() {
@@ -271,6 +374,7 @@
 
       document.getElementById('boasVindas').innerHTML = `Bem vindo <strong>${user.nome}</strong>`;
 
+      await carregarCulturas();          // <-- adicione aqui
       carregarDispositivos();
       prepararModalConfiguracoes();
     }
@@ -390,6 +494,33 @@
       }
     }
 
+        // Carrega lista de culturas para o <select>
+    async function carregarCulturas() {
+      const sel = document.getElementById('dispCultura');
+      sel.innerHTML = '<option value="">Carregando...</option>';
+      try {
+        const r = await fetch('/culturas', { credentials:'include' }); // ou /api/culturas se usar o alias
+        const j = await r.json();
+        if (!r.ok || !j.success) throw new Error(j.message || 'Falha ao carregar culturas');
+
+        if (!j.culturas || j.culturas.length === 0) {
+          sel.innerHTML = '<option value="">Nenhuma cultura cadastrada</option>';
+          return;
+        }
+
+        sel.innerHTML = '<option value="">Selecione...</option>';
+        j.culturas.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = c.cultura;
+          sel.appendChild(opt);
+        });
+      } catch (e) {
+        console.error('Erro ao carregar culturas:', e);
+        sel.innerHTML = '<option value="">Erro ao carregar</option>';
+      }
+    }
+
     // =====================
     // DADOS / LISTAGEM / PROJEÇÃO
     // =====================
@@ -428,19 +559,42 @@
     function exibirListaDispositivos(dispositivos) {
       const lista = document.getElementById('listaDispositivos');
       lista.innerHTML = '<h3 style="font-size: 14px; margin-bottom: 10px;">Meus Dispositivos</h3>';
+
       dispositivos.forEach(disp => {
         const item = document.createElement('div');
         item.className = 'dispositivo-item';
         item.dataset.dispositivoId = disp.id;
         item.innerHTML = `
-          <div class="dispositivo-info">
-            <strong>${disp.nome_cultura || 'Sem cultura'}</strong>
-            <small>Serial: ${disp.serialnumber}</small>
+          <div class="dispositivo-info" style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <strong>${disp.nome_cultura || 'Sem cultura'}</strong><br>
+              <small>Serial: ${disp.serialnumber}</small>
+            </div>
+            <button class="btn-remove" data-id="${disp.id}" 
+              style="background:#ff4444;border:none;color:#fff;border-radius:4px;padding:4px 8px;cursor:pointer;">🗑️</button>
           </div>`;
         item.onclick = () => selecionarDispositivo(disp);
         lista.appendChild(item);
       });
+
+      // <-- AQUI, dentro da função:
+      lista.querySelectorAll('.btn-remove').forEach(btn=>{
+        btn.addEventListener('click', async (e)=>{
+          e.stopPropagation();
+          const id = btn.dataset.id;
+          if(!confirm('Deseja realmente excluir este dispositivo?')) return;
+          const resp = await fetch(`/me/dispositivos/${id}`, {method:'DELETE', credentials:'include'});
+          const data = await resp.json();
+          if(resp.ok && data.success){
+            alert('Dispositivo removido!');
+            carregarDispositivos();
+          } else {
+            alert(data.message || 'Erro ao remover.');
+          }
+        });
+      });
     }
+
 
     function selecionarDispositivo(dispositivo) {
       dispositivoAtual = dispositivo;
@@ -507,6 +661,8 @@
         })
         .catch(err => console.error('Erro ao carregar dados dos sensores:', err));
     }
+
+    
 
     function carregarHistorico(dispositivoId) {
       fetch(`/esp32/sensores/${dispositivoId}/historico?horas=24`, { credentials: 'include' })
@@ -589,6 +745,8 @@
 
     function logout() {
       if (window.intervalAtualizacao) clearInterval(window.intervalAtualizacao);
+      if (logoutTimer) clearTimeout(logoutTimer); // <- evita timeout disparar no meio do logout
+
       fetch('/logout', {
         method: 'POST',
         credentials: 'include',
@@ -600,6 +758,345 @@
 
     // Inicializar ao carregar a página
     inicializar();
+
+     let logoutTimer;
+  const TEMPO_MAXIMO_INATIVIDADE = 2 * 60 * 1000; // 2 minutos
+
+
+
+  function logoutAutomatico() {
+    // evita alert duplicado se já estiver saindo
+    if (window.__expirando__) return;
+    window.__expirando__ = true;
+    alert('Sessão expirada por inatividade.');
+    // chama seu logout padrão (encerra sessão no back e redireciona)
+    logout();
+  }
+
+  function reiniciarTimer() {
+    clearTimeout(logoutTimer);
+    logoutTimer = setTimeout(logoutAutomatico, TEMPO_MAXIMO_INATIVIDADE);
+  }
+
+  // começa o timer só depois que a página terminou de carregar e seu inicializar() já rodou
+  window.addEventListener('load', reiniciarTimer);
+
+  // eventos que contam como atividade
+  ['mousemove','keypress','scroll','click','touchstart'].forEach(evt =>
+    document.addEventListener(evt, reiniciarTimer, { passive: true })
+  );
+
+  // se a aba voltar a ficar visível, reinicia
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) reiniciarTimer();
+  });
+
+
+// ========= Helpers Modal Dispositivo =========
+function showAlertDisp(msg, type='success') {
+  const el = document.getElementById('alertDisp');
+  el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+  setTimeout(() => { el.innerHTML=''; }, 5000);
+}
+
+// Abre modal em modo criacao/edicao
+async function abrirModalDispositivo(modo, dados = null) {
+  const modal = document.getElementById('modalDispositivo');
+  const titulo = document.getElementById('tituloModalDisp');
+  const btnExcluir = document.getElementById('btnExcluirDisp');
+  const form = document.getElementById('formDispositivo');
+
+  form.reset();
+  document.getElementById('dispId').value = '';
+
+  // garante que o select tenha opções
+  const selCultura = document.getElementById('dispCultura');
+  if (!selCultura.options.length || selCultura.options.length === 1) {
+    await carregarCulturas();
+  }
+
+  if (modo === 'edit' && dados) {
+    // Modo edição
+    titulo.textContent = '✏️ Editar dispositivo';
+    document.getElementById('dispId').value = dados.id;
+
+    // Serial: somente leitura e esmaecido
+    const serialEl = document.getElementById('dispSerial');
+    serialEl.value = dados.serialnumber || '';
+    serialEl.readOnly = true;
+    serialEl.style.opacity = '0.65';
+    serialEl.title = 'O serial não pode ser alterado.';
+
+    // Demais campos
+    document.getElementById('dispCultura').value = dados.fk_culturas ? String(dados.fk_culturas) : '';
+    document.getElementById('dispCEP').value     = dados.CEP || '';
+    document.getElementById('dispRua').value     = dados.rua || '';
+    document.getElementById('dispNumero').value  = dados.numero || '';
+    document.getElementById('dispBairro').value  = dados.bairro || '';
+    document.getElementById('dispCidade').value  = dados.cidade || '';
+    document.getElementById('dispEstado').value  = (dados.estado || '').slice(0,2);
+
+    // Mostrar botão excluir no modo edição
+    btnExcluir.style.display = 'block';
+
+  } else {
+    // Modo adicionar
+    titulo.textContent = '➕ Adicionar dispositivo';
+    document.getElementById('dispId').value = '';
+
+    // Serial: habilitado e normal
+    const serialEl = document.getElementById('dispSerial');
+    serialEl.readOnly = false;
+    serialEl.style.opacity = '';
+    serialEl.title = '';
+    serialEl.value = '';
+
+    // Demais campos limpos
+    document.getElementById('dispCultura').value = '';
+    document.getElementById('dispCEP').value     = '';
+    document.getElementById('dispRua').value     = '';
+    document.getElementById('dispNumero').value  = '';
+    document.getElementById('dispBairro').value  = '';
+    document.getElementById('dispCidade').value  = '';
+    document.getElementById('dispEstado').value  = '';
+
+    // Esconde botão excluir
+    btnExcluir.style.display = 'none';
+  }
+
+  // >>> importante: exibir o modal e FECHAR a função
+  modal.style.display = 'block';
+}
+
+
+// Fecha modal
+(function wireModalDisp() {
+  const modal = document.getElementById('modalDispositivo');
+  document.getElementById('fecharModalDisp').addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+  window.addEventListener('click', (e) => {
+    if (e.target === modal) modal.style.display = 'none';
+  });
+})();
+
+// CEP → auto-preenche (ViaCEP)
+async function preencherPorCEP() {
+  const cep = document.getElementById('dispCEP').value.replace(/\D/g,'');
+  if (cep.length !== 8) return;
+  try {
+    const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    const j = await r.json();
+    if (j.erro) { showAlertDisp('CEP não encontrado', 'error'); return; }
+    document.getElementById('dispRua').value = j.logradouro || '';
+    document.getElementById('dispBairro').value = j.bairro || '';
+    document.getElementById('dispCidade').value = j.localidade || '';
+    document.getElementById('dispEstado').value = (j.uf || '').slice(0,2);
+  } catch(e) {
+    console.error(e);
+    showAlertDisp('Falha ao buscar CEP', 'error');
+  }
+}
+document.getElementById('dispCEP').addEventListener('blur', preencherPorCEP);
+
+// Monta string do endereço para geocode
+function montarEndereco() {
+  const rua = document.getElementById('dispRua').value.trim();
+  const numero = document.getElementById('dispNumero').value.trim();
+  const bairro = document.getElementById('dispBairro').value.trim();
+  const cidade = document.getElementById('dispCidade').value.trim();
+  const estado = document.getElementById('dispEstado').value.trim();
+  const cep = document.getElementById('dispCEP').value.trim();
+  const partes = [rua, numero, bairro, cidade, estado, 'Brasil', cep].filter(Boolean);
+  return partes.join(', ');
+}
+
+// Chama geocode no backend
+async function geocodeEndereco() {
+  const q = montarEndereco();
+  const r = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`, { credentials:'include' });
+  const j = await r.json();
+  if (j.success && j.found) return { lat: j.lat, lon: j.lon };
+  return { lat: null, lon: null };
+}
+
+// Submit do formulário (criar/editar)
+// Submit do formulário (criar/editar)
+document.getElementById('formDispositivo').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('dispId').value;
+
+  // Normalizações
+  const cepDigits = document.getElementById('dispCEP').value.trim().replace(/\D/g, '');
+  const numeroRaw = document.getElementById('dispNumero').value.trim();
+  const numeroVal = numeroRaw === '' ? null : numeroRaw;
+
+  const payload = {
+    fk_culturas: Number(document.getElementById('dispCultura').value) || null,
+    CEP:    cepDigits,
+    rua:    document.getElementById('dispRua').value.trim(),
+    numero: numeroVal,
+    bairro: document.getElementById('dispBairro').value.trim(),
+    cidade: document.getElementById('dispCidade').value.trim(),
+    estado: document.getElementById('dispEstado').value.trim().toUpperCase()
+  };
+
+  // POST inclui serial, PUT não (e força remoção se sobrar por engano)
+  if (!id) {
+    payload.serialnumber = document.getElementById('dispSerial').value.trim();
+  } else {
+    delete payload.serialnumber;
+  }
+
+  // Geocode obrigatório: se não achar, não envia
+  try {
+    const g = await geocodeEndereco();
+    const lat = Number(g.lat), lon = Number(g.lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+      showAlertDisp('Não foi possível localizar o endereço (lat/lon). Verifique CEP/rua/bairro/cidade/UF.', 'error');
+      return;
+    }
+    payload.latitude  = lat;
+    payload.longitude = lon;
+  } catch (_) {
+    showAlertDisp('Falha no geocodificador. Tente novamente.', 'error');
+    return;
+  }
+
+  try {
+    const url  = id ? `/me/dispositivos/${id}` : '/me/dispositivos/vincular';
+    const opts = {
+      method: id ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload)
+    };
+
+    const resp = await fetch(url, opts);
+    let out = {};
+    try { out = await resp.json(); } catch {}
+
+    if (resp.ok && out.success) {
+      showAlertDisp('Salvo com sucesso!', 'success');
+      setTimeout(() => {
+        document.getElementById('modalDispositivo').style.display = 'none';
+        carregarDispositivos();
+      }, 500);
+    } else {
+      const msg = (out && (out.message || out.error)) || `${resp.status} ${resp.statusText}` || 'Erro ao salvar';
+      showAlertDisp(msg, 'error');
+      console.error('Salvar dispositivo - erro:', { status: resp.status, out, payload });
+    }
+  } catch (err) {
+    console.error(err);
+    showAlertDisp('Erro ao salvar (falha de rede).', 'error');
+  }
+});
+
+// Wire dos botões "Adicionar" e "Editar"
+document.getElementById('btnAddDisp').addEventListener('click', () => abrirModalDispositivo('add'));
+document.getElementById('btnEditarDisp').addEventListener('click', () => {
+  if (!dispositivoAtual) { alert('Selecione um dispositivo primeiro.'); return; }
+  abrirModalDispositivo('edit', dispositivoAtual);
+});
+
+// Função de exclusão
+async function excluirDispositivo() {
+  const id = document.getElementById('dispId').value;
+  if (!id) return alert('Nenhum dispositivo selecionado.');
+  const confirmar = confirm('Tem certeza que deseja remover este dispositivo? Esta ação não pode ser desfeita.');
+  if (!confirmar) return;
+
+  try {
+    const resp = await fetch(`/me/dispositivos/${id}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+    const data = await resp.json();
+    if (resp.ok && data.success) {
+      alert('Dispositivo removido com sucesso!');
+      document.getElementById('modalDispositivo').style.display = 'none';
+      carregarDispositivos();
+    } else {
+      alert(data.message || 'Erro ao remover dispositivo.');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Erro ao excluir dispositivo.');
+  }
+}
+
+// Associar ao botão
+document.getElementById('btnExcluirDisp').addEventListener('click', excluirDispositivo);
+
+// Quando selecionar dispositivo na lista, guarda o objeto completo para edição
+function selecionarDispositivo(dispositivo) {
+  dispositivoAtual = dispositivo;
+  document.querySelectorAll('.dispositivo-item').forEach(item => {
+    item.classList.remove('selecionado');
+    if (item.dataset.dispositivoId == dispositivo.id) item.classList.add('selecionado');
+  });
+
+  document.getElementById('nomeDispositivo').innerText = dispositivo.nome_cultura || 'Sem cultura definida';
+  document.getElementById('serialDispositivo').innerText = `Serial: ${dispositivo.serialnumber}`;
+  document.getElementById('culturaNome').innerText = dispositivo.nome_cultura || '---';
+  document.getElementById('aguaNecessaria').innerText = dispositivo.agua_necessaria ? `${dispositivo.agua_necessaria} L/m²` : '---';
+  document.getElementById('frequenciaIrrigacao').innerText = dispositivo.frequencia_irrigacao_dias ? `${dispositivo.frequencia_irrigacao_dias} dias` : '---';
+
+  carregarDadosSensores(dispositivo.id);
+  carregarHistorico(dispositivo.id);
+  carregarProjecaoIrrigacao(dispositivo.id);
+
+  if (window.intervalAtualizacao) clearInterval(window.intervalAtualizacao);
+  window.intervalAtualizacao = setInterval(() => {
+    carregarDadosSensores(dispositivo.id);
+    carregarProjecaoIrrigacao(dispositivo.id);
+  }, 30000);
+}
+
+
+
+// Wire dos botões "Adicionar" e "Editar"
+document.getElementById('btnAddDisp').addEventListener('click', ()=> abrirModalDispositivo('add'));
+document.getElementById('btnEditarDisp').addEventListener('click', ()=>{
+  if (!dispositivoAtual) { alert('Selecione um dispositivo primeiro.'); return; }
+  abrirModalDispositivo('edit', dispositivoAtual);
+});
+
+
+// Função de exclusão
+async function excluirDispositivo() {
+  const id = document.getElementById('dispId').value;
+  if (!id) return alert('Nenhum dispositivo selecionado.');
+  const confirmar = confirm('Tem certeza que deseja remover este dispositivo? Esta ação não pode ser desfeita.');
+  if (!confirmar) return;
+
+  try {
+    const resp = await fetch(`/me/dispositivos/${id}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+    const data = await resp.json();
+    if (resp.ok && data.success) {
+      alert('Dispositivo removido com sucesso!');
+      document.getElementById('modalDispositivo').style.display = 'none';
+      carregarDispositivos();
+    } else {
+      alert(data.message || 'Erro ao remover dispositivo.');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Erro ao excluir dispositivo.');
+  }
+}
+
+// Associar ao botão
+document.getElementById('btnExcluirDisp').addEventListener('click', excluirDispositivo);
+
+
+
+
   </script>
 </body>
 </html>
+

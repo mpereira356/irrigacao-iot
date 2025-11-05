@@ -1,0 +1,26 @@
+[0;1;32m●[0m mariadb.service - MariaDB 10.3.39 database server
+   Loaded: loaded (/lib/systemd/system/mariadb.service; enabled; vendor preset: enabled)
+   Active: [0;1;32mactive (running)[0m since Wed 2025-10-08 17:02:40 -03; 18min ago
+     Docs: man:mysqld(8)
+           https://mariadb.com/kb/en/library/systemd/
+  Process: 32127 ExecStartPre=/usr/bin/install -m 755 -o mysql -g root -d /var/run/mysqld (code=exited, status=0/SUCCESS)
+  Process: 32128 ExecStartPre=/bin/sh -c systemctl unset-environment _WSREP_START_POSITION (code=exited, status=0/SUCCESS)
+  Process: 32130 ExecStartPre=/bin/sh -c [ ! -e /usr/bin/galera_recovery ] && VAR= ||   VAR=`cd /usr/bin/..; /usr/bin/galera_recovery`; [ $? -eq 0 ]   && systemctl set-environment _WSREP_START_POSITION=$VAR || exit 1 (code=exited, status=0/SUCCESS)
+  Process: 32208 ExecStartPost=/bin/sh -c systemctl unset-environment _WSREP_START_POSITION (code=exited, status=0/SUCCESS)
+  Process: 32210 ExecStartPost=/etc/mysql/debian-start (code=exited, status=0/SUCCESS)
+ Main PID: 32177 (mysqld)
+   Status: "Taking your SQL requests now..."
+    Tasks: 32 (limit: 502)
+   Memory: 8.7M
+   CGroup: /system.slice/mariadb.service
+           └─32177 /usr/sbin/mysqld
+
+Oct 08 17:02:36 vps60349 systemd[1]: Starting MariaDB 10.3.39 database server...
+Oct 08 17:02:40 vps60349 systemd[1]: Started MariaDB 10.3.39 database server.
+Oct 08 17:02:41 vps60349 /etc/mysql/debian-start[32215]: [0;1;39m[0;1;31m[0;1;39m/usr/bin/mysql_upgrade: the '--basedir' option is always ignored[0m
+Oct 08 17:02:41 vps60349 /etc/mysql/debian-start[32215]: [0;1;39m[0;1;31m[0;1;39mLooking for 'mysql' as: /usr/bin/mysql[0m
+Oct 08 17:02:41 vps60349 /etc/mysql/debian-start[32215]: [0;1;39m[0;1;31m[0;1;39mLooking for 'mysqlcheck' as: /usr/bin/mysqlcheck[0m
+Oct 08 17:02:41 vps60349 /etc/mysql/debian-start[32215]: [0;1;39m[0;1;31m[0;1;39mThis installation of MariaDB is already upgraded to 10.3.39-MariaDB.[0m
+Oct 08 17:02:41 vps60349 /etc/mysql/debian-start[32215]: [0;1;39m[0;1;31m[0;1;39mThere is no need to run mysql_upgrade again for 10.3.39-MariaDB.[0m
+Oct 08 17:02:41 vps60349 /etc/mysql/debian-start[32215]: [0;1;39m[0;1;31m[0;1;39mYou can use --force if you still want to run mysql_upgrade[0m
+Oct 08 17:02:41 vps60349 /etc/mysql/debian-start[32227]: Triggering myisam-recover for all MyISAM tables and aria-recover for all Aria tables

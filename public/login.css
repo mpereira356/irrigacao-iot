@@ -75,6 +75,37 @@ button{
 button:hover{ filter: brightness(90%); }
 button:active{ transform: translateY(1px); }
 
+
+.disp-item{background:#0b1715;border:1px solid #243a35;border-radius:10px;margin:6px 0;overflow:hidden}
+  .disp-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;cursor:pointer}
+  .disp-title{display:flex;flex-direction:column}
+  .disp-title small{opacity:.8;font-size:12px}
+  .disp-chevron{transition:transform .2s ease}
+  .disp-body{display:none;padding:10px 12px;border-top:1px solid #243a35}
+  .disp-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:8px}
+
+ /* ====== Layout dos botões e campo ====== */
+  .disp-toolbar{
+    display:flex;
+    flex-direction:column;  /* um embaixo do outro */
+    gap:10px;
+    align-items:stretch;
+  }
+  .disp-toolbar .btn{
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+  }
+  #novoSerial{
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    border:1px solid #2d3f3a;
+    background:#0b1715;
+    color:#e8fff6;
+    box-sizing:border-box;
+  }
+  
 /* ===== LISTAS ===== */
 .usuario-item{
   display:flex;
@@ -200,7 +231,7 @@ button:active{ transform: translateY(1px); }
   position: absolute;
   top: 0;                     /* ocupa a altura toda do input */
   bottom: 0;
-  right: 50px;               /* grudadinho à direita */
+  right: 40px;               /* grudadinho à direita */
   width: 36px;                /* área de clique confortável */
   display: flex;              /* centraliza o ícone na altura */
   align-items: center;
@@ -239,3 +270,4 @@ button:active{ transform: translateY(1px); }
   h1{ font-size:22px }
   h2{ font-size:18px }
 }
+
