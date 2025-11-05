@@ -11,7 +11,12 @@
   <div class="shell">
     <!-- LOGIN -->
     <div id="loginBox" class="section login-section text-center">
-      <button id="theme-toggle" onclick="toggleTheme()" class="btn-secondary" style="position: absolute; top: 10px; right: 10px; width: auto; padding: 8px 12px; font-size: 12px;">Tema Dark</button>
+      <!-- Botão de tema com ícone (igual ao dash) -->
+      <button id="theme-toggle" onclick="toggleTheme()" class="btn-secondary"
+        style="position:absolute; top:10px; right:10px; width:auto; padding:8px; font-size:12px; border:none; cursor:pointer;">
+        <img id="themeIcon" src="img/night.png" alt="Tema claro" style="width:20px; height:20px; vertical-align:middle;">
+      </button>
+
       <h1 class="text-primary">
         <img src="/logo.png" alt="SmartFarm" style="height:200px;">
       </h1>
@@ -28,713 +33,671 @@
           <h2 class="text-light">Painel Admin</h2>
           <p id="mensagemLogin" class="text-primary"></p>
         </div>
+
         <div style="display: flex; gap: 10px; align-items: center;">
-          <button id="theme-toggle-panel" onclick="toggleTheme()" class="btn-secondary" style="width: auto; padding: 8px 12px; font-size: 12px;">Tema Dark</button>
-          <button onclick="logout()" class="btn-secondary">Sair</button>
+          <!-- Botão de tema do painel com ícone -->
+          <button id="theme-toggle-panel" onclick="toggleTheme()" class="btn-secondary"
+            style="width:auto; padding:8px; font-size:12px; background:none; border:none; cursor:pointer;">
+            <img id="themeIconPanel" src="img/night.png" alt="Tema claro" style="width:20px; height:20px; vertical-align:middle;">
+          </button>
+
+          <button class="botao-logout"
+            onclick="logout()"
+            style="background-color:red; border:none; border-radius:8px; padding:8px 14px; cursor:pointer; transition:0.2s;"
+            onmouseover="this.style.backgroundColor='#cc0000'; this.style.transform='translateY(-1px)';"
+            onmouseout="this.style.backgroundColor='red'; this.style.transform='none';">
+            <img src="img/exit.png" alt="Sair" style="width:20px; height:20px; vertical-align:middle;">
+          </button>
         </div>
       </div>
+
       <div id="adminArea" class="admin-grid"></div>
     </div>
   </div>
 
-<!-- Modal Confirmar (SIM/Não) -->
-<div id="confirmModal" style="display:none; position:fixed; inset:0; z-index:9999; background: rgba(0,0,0,.7); align-items:center; justify-content:center;">
-<div style="width:min(420px, calc(100% - 32px)); border-radius:14px;">
-    <div style="padding:18px 18px 8px; font-weight:700; font-size:18px; border-bottom: 1px solid var(--border-color);">Confirmação</div>
-    <div id="confirmText" style="padding:15px 18px 18px; line-height:1.5; color: var(--text-muted);"></div>
-    <div style="display:flex; gap:10px; justify-content:flex-end; padding:12px 14px; border-radius:0 0 14px 14px;">
-      <button id="btnNao" class="btn-secondary" style="padding:10px 16px; width: auto;">Não</button>
-      <button id="btnSim" style="padding:10px 16px; width: auto;">SIM</button>
+  <!-- Modal Confirmar (SIM/Não) -->
+  <div id="confirmModal" style="display:none; position:fixed; inset:0; z-index:9999; background: rgba(0,0,0,.7); align-items:center; justify-content:center;">
+    <div style="width:min(420px, calc(100% - 32px)); border-radius:14px;">
+      <div style="padding:18px 18px 8px; font-weight:700; font-size:18px; border-bottom: 1px solid var(--border-color);">Confirmação</div>
+      <div id="confirmText" style="padding:15px 18px 18px; line-height:1.5; color: var(--text-muted);"></div>
+      <div style="display:flex; gap:10px; justify-content:flex-end; padding:12px 14px; border-radius:0 0 14px 14px;">
+        <button id="btnNao" class="btn-secondary" style="padding:10px 16px; width: auto;">Não</button>
+        <button id="btnSim" style="padding:10px 16px; width: auto;">SIM</button>
+      </div>
     </div>
   </div>
-</div>
 
 <script>
   let dispositivoAbertoId = null;
 
-  // Lógica de Alternância de Tema
+  // ======================= Alternância de Tema (igual ao dash) =======================
   function toggleTheme() {
     const link = document.getElementById('theme-link');
-    const toggleBtnLogin = document.getElementById('theme-toggle');
-    const toggleBtnPanel = document.getElementById('theme-toggle-panel');
-    
-    let currentTheme = link.getAttribute('href');
+    const iconLogin = document.getElementById('themeIcon');
+    const iconPanel = document.getElementById('themeIconPanel');
+
+    const currentTheme = link.getAttribute('href');
     let newTheme = '';
-    let newText = '';
+    let newIcon = '';
+    let newAlt  = '';
 
     if (currentTheme === 'login.css') {
+      // indo para dark
       newTheme = 'login_dark.css';
-      newText = 'Tema Claro';
+      newIcon  = 'img/day.png';
+      newAlt   = 'Tema escuro';
     } else {
+      // voltando para claro
       newTheme = 'login.css';
-      newText = 'Tema Dark';
+      newIcon  = 'img/night.png';
+      newAlt   = 'Tema claro';
     }
 
     link.setAttribute('href', newTheme);
-    localStorage.setItem('theme', newTheme);
-    
-    if (toggleBtnLogin) toggleBtnLogin.innerText = newText;
-    if (toggleBtnPanel) toggleBtnPanel.innerText = newText;
+    // chave dedicada ao login para não conflitar com dash
+    localStorage.setItem('loginTheme', newTheme);
+
+    if (iconLogin) { iconLogin.src = newIcon; iconLogin.alt = newAlt; }
+    if (iconPanel) { iconPanel.src = newIcon; iconPanel.alt = newAlt; }
   }
 
-  // Aplica o tema salvo ao carregar
+  // Aplica o tema salvo ao carregar e ajusta os ícones
   document.addEventListener('DOMContentLoaded', () => {
-    const savedTheme = localStorage.getItem('theme');
+    const savedTheme = localStorage.getItem('loginTheme');
+    const link = document.getElementById('theme-link');
+    const iconLogin = document.getElementById('themeIcon');
+    const iconPanel = document.getElementById('themeIconPanel');
+
     if (savedTheme && savedTheme !== 'login.css') {
-      document.getElementById('theme-link').setAttribute('href', savedTheme);
-      const toggleBtnLogin = document.getElementById('theme-toggle');
-      const toggleBtnPanel = document.getElementById('theme-toggle-panel');
-      
-      if (toggleBtnLogin) toggleBtnLogin.innerText = 'Tema Claro';
-      if (toggleBtnPanel) toggleBtnPanel.innerText = 'Tema Claro';
+      link.setAttribute('href', savedTheme);
+      if (iconLogin) { iconLogin.src = 'img/day.png'; iconLogin.alt = 'Tema escuro'; }
+      if (iconPanel) { iconPanel.src = 'img/day.png'; iconPanel.alt = 'Tema escuro'; }
+    } else {
+      if (link.getAttribute('href') !== 'login.css') link.setAttribute('href', 'login.css');
+      if (iconLogin) { iconLogin.src = 'img/night.png'; iconLogin.alt = 'Tema claro'; }
+      if (iconPanel) { iconPanel.src = 'img/night.png'; iconPanel.alt = 'Tema claro'; }
     }
   });
 
-  // Confirm customizado com "SIM/Não"
-
-  // Função para lidar com a tecla Enter no login
+  // ======================= Login =======================
   function handleLoginKey(event) {
     if (event.key === 'Enter') {
-      event.preventDefault(); // Evita o comportamento padrão (se houver)
+      event.preventDefault();
       login();
     }
   }
-function confirmar(msg){
-  return new Promise(resolve=>{
-    const modal = document.getElementById('confirmModal');
-    const txt   = document.getElementById('confirmText');
-    const btnN  = document.getElementById('btnNao');
-    const btnS  = document.getElementById('btnSim');
 
-    txt.textContent = msg;
-    modal.style.display = 'flex';
-
-    const close = (val)=>{
-      modal.style.display = 'none';
-      btnN.removeEventListener('click', onN);
-      btnS.removeEventListener('click', onS);
-      modal.removeEventListener('click', onBackdrop);
-      document.removeEventListener('keydown', onKey);
-      resolve(val);
-    };
-
-    const onN = ()=> close(false);
-    const onS = ()=> close(true);
-    const onBackdrop = (e)=> { if(e.target === modal) close(false); };
-    const onKey = (e)=> {
-      if(e.key === 'Escape') close(false);
-      if(e.key === 'Enter')  close(true);
-    };
-
-    btnN.addEventListener('click', onN);
-    btnS.addEventListener('click', onS);
-    modal.addEventListener('click', onBackdrop);
-    document.addEventListener('keydown', onKey);
-  });
-}
-
-/* =======================
-   Sessão existente
-   ======================= */
-async function verificarSessaoExistente() {
-  try {
-    const r = await fetch('/session', { credentials: 'include' });
-    const data = await r.json();
-
-    if (!data.authenticated) return; // mostra login
-
-    // tenta determinar admin pelo backend, pelo nome do usuário ou pelo localStorage
-    const fromLS = JSON.parse(localStorage.getItem('usuarioLogado') || 'null');
-    const deduzAdmin = (x) => !!(x && (x.isAdmin === true || x.usuario === 'admin'));
-
-    const isAdmin =
-      (data && (data.isAdmin === true || data.usuario === 'admin')) ||
-      deduzAdmin(fromLS);
-
-    if (isAdmin) {
-      // mantém na página admin (login.html) e monta o painel
-      const payload = {
-        authenticated: true,
-        usuario: data.usuario || (fromLS && fromLS.usuario) || 'admin',
-        nome: data.nome || (fromLS && fromLS.nome) || 'Administrador',
-        isAdmin: true
-      };
-      localStorage.setItem('usuarioLogado', JSON.stringify(payload));
-      document.getElementById('loginBox').classList.add('hidden');
-      document.getElementById('painelUsuario').classList.remove('hidden');
-      document.getElementById('mensagemLogin').innerText = `Bem-vindo(a), ${payload.nome}!`;
-      montarPainelAdmin();
-      return;
-    }
-
-    // se não for admin, manda pro dashboard
-    window.location.href = 'dash.html';
-  } catch (e) {
-    // não faz nada: mostra o formulário de login
-    console.log('Sessão não pôde ser verificada:', e);
-  }
-}
-verificarSessaoExistente();
-
-let alvo = { id: null, loginOriginal: "" };
-
-/* =======================
-   Auto-montagem se já logado (localStorage)
-   ======================= */
-window.onload = () => {
-  const dados = localStorage.getItem('usuarioLogado');
-  if (dados) {
-    const user = JSON.parse(dados);
-    document.getElementById('loginBox').classList.add('hidden');
-    document.getElementById('painelUsuario').classList.remove('hidden');
-    document.getElementById('mensagemLogin').innerText = `Bem-vindo(a), ${user.nome}!`;
-
-    if (user.isAdmin && !document.getElementById('adminCardsBuilt')) {
-      montarPainelAdmin();
-    } else {
-      fetch(`/usuarios?login=${encodeURIComponent(user.usuario)}`)
-        .then(res => res.json())
-        .then(resp => {
-          const lista = Array.isArray(resp) ? resp : (resp.usuarios || []);
-          if (lista.length > 0) {
-            const isAdmin = lista[0].usuario === 'admin';
-            if (isAdmin && !document.getElementById('adminCardsBuilt')) montarPainelAdmin();
-          }
-        })
-        .catch(()=>{});
-    }
-  }
-};
-
-/* ------------ UI helpers ------------ */
-function sectionCard(html){
-	  const wrap = document.createElement('div');
-	  wrap.className = 'card';
-	  wrap.innerHTML = `<div class="card-content">${html}</div>`; // Adiciona a div card-content
-	  return wrap;
-	}
-
-/* =======================
-   Montagem do Painel Admin
-   ======================= */
-function montarPainelAdmin() {
-  if (document.getElementById('adminCardsBuilt')) return;
-  const grid = document.getElementById('adminArea');
-  grid.id = 'adminCardsBuilt';
-
-  // CARD 1: Cadastro
-  grid.appendChild(sectionCard(`
-    <h3>Cadastro</h3>
-    <p id="usuariosOnline" class="help text-primary">Usuários online: carregando...</p>
-    <input type="text" id="nomeUsuario" placeholder="Nome do novo usuário">
-    <input type="email" id="emailUsuario" placeholder="E-mail do novo usuário">
-    <input type="text" id="novoUsuario" placeholder="Login do novo usuário">
-    <input type="password" id="novaSenha" placeholder="Senha">
-    <button onclick="criarUsuario()">Criar novo usuário</button>
-    <p id="mensagem" class="help"></p>
-  `));
-
-  // CARD 2: Alterar/Excluir
-  grid.appendChild(sectionCard(`
-    <h3>Alterar Usuário</h3>
-    <p class="help text-muted">* Digite para filtrar; deixe vazio para listar todos.</p>
-    <input type="text" id="usuarioBusca" placeholder="Login do usuário a alterar" oninput="filtrarUsuarios()" autocomplete="off">
-    <div id="listaUsuarios" style="max-height: 300px; overflow-y: auto; padding-right: 5px;"></div>
-    <div id="formAlteracao" style="display: none;">
-      <input type="text" id="novoNome" placeholder="Novo nome">
-      <input type="text" id="novoEmail" placeholder="Novo email">
-      <input type="text" id="novoLogin" placeholder="Novo login">
-      <input type="password" id="novaSenhaAlterar" placeholder="Nova senha (obrigatória p/ atualizar)">
-      <button onclick="atualizarUsuario()">Salvar alterações</button>
-      <button onclick="excluirUsuarioPorLogin()" class="btn-danger" style="margin-top: 8px;">Excluir usuário</button>
-      <p id="msgAlteracao" class="help"></p>
-    </div>
-  `));
-
-  // CARD 3: Gerenciar Dispositivos (NOVO)
-  grid.appendChild(sectionCard(`
-    <h3>Gerenciar Dispositivos</h3>
-
-    <div class="disp-toolbar">
-      <button id="btnAtualizarDisps">Atualizar lista</button>
-      <input id="novoSerial" type="text" placeholder="Serial do ESP32">
-      <button id="btnAddSerial">Adicionar dispositivo</button>
-    </div>
-
-        <div id="listaDispositivos" style="margin-top:10px; max-height: 300px; overflow-y: auto; padding-right: 5px;"></div>
-    <small class="text-muted">Mostrando somente dispositivos vinculados a algum usuário.</small>
-
-  `));
-
-  // CARD 4: Logs
-  grid.appendChild(sectionCard(`
-    <h3>Logs de Login</h3>
-    <div class="filtros">
-      <input type="text" id="filtroUsuarioLog" placeholder="filtrar por login (opcional)">
-      <select id="filtroSucesso">
-        <option value="">todos</option>
-        <option value="1">sucesso</option>
-        <option value="0">falha</option>
-      </select>
-      <button onclick="toggleLogs()">Mostrar / Ocultar</button>
-      <button onclick="carregarLogs()">Atualizar</button>
-    </div>
-    <div id="logsContainer" style="display:none; margin-top: 15px;">
-      <div id="logsArea"></div>
-    </div>
-  `));
-
-  // ===== Wires que dependem do DOM já montado =====
-  document.getElementById('btnAtualizarDisps')
-    .addEventListener('click', carregarDispositivosAdmin);
-
-  document.getElementById('btnAddSerial')
-    .addEventListener('click', adicionarSerial);
-
-  // Atualiza online periodicamente
-  setInterval(mostrarUsuariosOnline, 3000);
-
-  // Inicializações
-  filtrarUsuarios();
-  carregarDispositivosAdmin(); // já carrega a lista no início
-}
-
-/* ------------ Auth ------------ */
-function login() {
-  const usuario = document.getElementById('user').value.trim();
-  const senha   = document.getElementById('pass').value;
-
-  fetch('/login', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    credentials: 'include',
-    body: JSON.stringify({ usuario, senha })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success){
-      localStorage.setItem('usuarioLogado', JSON.stringify(data));
-      document.getElementById('loginBox').classList.add('hidden');
-      document.getElementById('painelUsuario').classList.remove('hidden');
-      document.getElementById('mensagemLogin').innerText = `Bem-vindo(a), ${data.nome}!`;
-      if (data.isAdmin) montarPainelAdmin();
-      else window.location.href = 'dash.html';
-    }else{
-      alert(data.message || 'Usuário ou senha inválidos!');
-    }
-  })
-  .catch(()=> alert('Sem conexão com o servidor.'));
-}
-
-function logout(){
-  try{
-    const u = JSON.parse(localStorage.getItem('usuarioLogado') || '{}');
-    fetch('/logout', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({usuario: u.usuario})});
-  }catch{}
-  localStorage.removeItem('usuarioLogado');
-  location.reload();
-}
-
-/* ------------ Cadastro ------------ */
-function criarUsuario(){
-  const nome    = document.getElementById('nomeUsuario').value.trim();
-  const email   = document.getElementById('emailUsuario').value.trim();
-  const usuario = document.getElementById('novoUsuario').value.trim();
-  const senha   = document.getElementById('novaSenha').value.trim();
-
-  fetch('/usuarios',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ nome, email, usuario, senha })
-  })
-  .then(res => res.json())
-  .then(data => {
-    document.getElementById('mensagem').innerText = data.message || (data.success ? 'Criado!' : 'Erro.');
-    filtrarUsuarios();
-  })
-  .catch(()=> document.getElementById('mensagem').innerText = 'Erro ao criar usuário.');
-}
-
-
-// Modal confirm com botões "SIM / Não" (auto-contido)
-async function confirmar(mensagemHTML) {
-  return new Promise((resolve) => {
-    // overlay
-    const ov = document.createElement('div');
-    ov.style.cssText = `
-      position:fixed; inset:0; background:rgba(0,0,0,.55);
-      display:flex; align-items:center; justify-content:center;
-      z-index: 9999; backdrop-filter: blur(2px);
-    `;
-
-    // caixa
-    const box = document.createElement('div');
-    box.style.cssText = `
-      width:min(520px, calc(100% - 32px));
-      background:#0e1c1a; color:#e8fff6; border:1px solid #24443d;
-      border-radius:14px; box-shadow:0 20px 60px rgba(0,0,0,.45);
-      overflow:hidden; font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial;
-    `;
-    box.innerHTML = `
-      <div style="padding:14px 18px; font-weight:700; border-bottom:1px solid #1b2f2b">
-        Confirmação
-      </div>
-      <div style="padding:16px 18px; font-size:14px; line-height:1.45;">
-        ${mensagemHTML}
-      </div>
-      <div style="display:flex; gap:12px; padding:14px 18px; background:#0b1715; border-top:1px solid #1b2f2b; justify-content:flex-end;">
-        <button id="btnNao" style="
-          padding:10px 14px; border-radius:10px; border:1px solid #2a3e39;
-          background:#142825; color:#cfeee6; cursor:pointer; min-width:90px;
-        ">Não</button>
-        <button id="btnSim" style="
-          padding:10px 14px; border-radius:10px; border:1px solid #12d6b1;
-          background:#12d6b1; color:#003b32; font-weight:700; cursor:pointer; min-width:90px;
-        ">SIM</button>
-      </div>
-    `;
-
-    ov.appendChild(box);
-    document.body.appendChild(ov);
-
-    const cleanup = (val) => {
-      try { document.body.removeChild(ov); } catch {}
-      resolve(val);
-    };
-
-    box.querySelector('#btnNao').addEventListener('click', () => cleanup(false));
-    box.querySelector('#btnSim').addEventListener('click', () => cleanup(true));
-
-    // acessibilidade: Enter = SIM, Esc = Não
-    const keyH = (e) => {
-      if (e.key === 'Escape') { e.preventDefault(); cleanup(false); }
-      if (e.key === 'Enter')  { e.preventDefault(); cleanup(true); }
-    };
-    setTimeout(() => document.addEventListener('keydown', keyH), 0);
-
-    // remove handler quando fechar
-    const obs = new MutationObserver(() => {
-      if (!document.body.contains(ov)) document.removeEventListener('keydown', keyH);
-    });
-    obs.observe(document.body, { childList: true });
-  });
-}
-
-/* ------------ Dispositivos (Admin) ------------ */
-// ===============================
-// Renderiza um dispositivo no painel admin
-// ===============================
-function renderDispositivoItem(d){
-  const wrap = document.createElement('div');
-  wrap.className = 'disp-item';
-  wrap.id = `disp-${d.id}`;
-
-  // Cabeçalho (clique para abrir/fechar)
-  const head = document.createElement('div');
-  head.className = 'disp-head';
-  head.innerHTML = `
-    <div class="disp-title">
-      <div style="font-weight:700">${d.serialnumber}</div>
-      <small>Usuário atual: ${d.usuario_login || '—'}${d.fk_usuarios ? ` (id: ${d.fk_usuarios})` : ''} • Cultura: ${d.nome_cultura || 'Sem cultura'}</small>
-    </div>
-    <div class="disp-chevron">▸</div>
-  `;
-
-  // Corpo (ações) — começa fechado
-  const body = document.createElement('div');
-  body.className = 'disp-body';
-  body.innerHTML = `
-    <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap">
-      <label style="font-size:12px;opacity:.85">Vincular ao usuário (ID):</label>
-      <input type="number" placeholder="ID usuário" id="user-${d.id}"
-             value="${d.fk_usuarios || ''}"
-             style="padding:6px 8px;width:160px;text-align:center;border-radius:8px;border:1px solid #2d3f3a;background:#0b1715;color:#e8fff6;">
-    </div>
-    <div class="disp-actions">
-      <button class="btn" data-update="${d.id}" style="background:#00b894;color:#fff;">Alterar usuário</button>
-      <button class="btn" data-unlink="${d.id}" style="background:#ff4444;color:#fff;">🔗 Desvincular</button>
-    </div>
-  `;
-
-  wrap.appendChild(head);
-  wrap.appendChild(body);
-
-  // Toggle abre/fecha (e garante um aberto por vez)
-  const chevron = head.querySelector('.disp-chevron');
-  const toggle = () => {
-    const aberto = body.style.display === 'block';
-    // Fecha o que estiver aberto
-    if (dispositivoAbertoId && dispositivoAbertoId !== d.id) {
-      const prev = document.getElementById(`disp-${dispositivoAbertoId}`);
-      if (prev) {
-        prev.querySelector('.disp-body').style.display = 'none';
-        const ch = prev.querySelector('.disp-chevron');
-        if (ch) ch.style.transform = 'rotate(0deg)';
-      }
-    }
-    // Abre/fecha atual
-    if (aberto){
-      body.style.display = 'none';
-      chevron.style.transform = 'rotate(0deg)';
-      dispositivoAbertoId = null;
-    }else{
-      body.style.display = 'block';
-      chevron.style.transform = 'rotate(90deg)';
-      dispositivoAbertoId = d.id;
-    }
-  };
-  head.addEventListener('click', toggle);
-
-  // Ação: Alterar usuário (PUT /esp32/dispositivos/:id/usuario)
-  const doUpdate = async () => {
+  /* =======================
+     Sessão existente
+     ======================= */
+  async function verificarSessaoExistente() {
     try {
-      const inp = body.querySelector(`#user-${d.id}`);
-      const fk_usuarios = parseInt((inp.value || '').trim(), 10);
-      if (!fk_usuarios) { alert('Informe um ID de usuário válido.'); inp.focus(); return; }
+      const r = await fetch('/session', { credentials: 'include' });
+      const data = await r.json();
 
-      const ok = await confirmar(`Alterar o ESP32 <b>${d.serialnumber}</b> para o usuário ID <b>${fk_usuarios}</b>?`);
-      if(!ok) return;
+      if (!data.authenticated) return; // mostra login
 
-      const r = await fetch(`/esp32/dispositivos/${d.id}/usuario`, {
-        method:'PUT',
-        headers:{'Content-Type':'application/json'},
-        credentials:'include',
-        body: JSON.stringify({ fk_usuarios })
-      });
-      const out = await r.json().catch(() => ({}));
+      // tenta determinar admin pelo backend, pelo nome do usuário ou pelo localStorage
+      const fromLS = JSON.parse(localStorage.getItem('usuarioLogado') || 'null');
+      const deduzAdmin = (x) => !!(x && (x.isAdmin === true || x.usuario === 'admin'));
 
-      if (r.ok && out.success){
-        alert('✅ Usuário do dispositivo atualizado com sucesso!');
-        carregarDispositivosAdmin();
-      } else {
-        alert(out.message || `Erro ao atualizar (HTTP ${r.status}).`);
+      const isAdmin =
+        (data && (data.isAdmin === true || data.usuario === 'admin')) ||
+        deduzAdmin(fromLS);
+
+      if (isAdmin) {
+        // mantém na página admin (login.html) e monta o painel
+        const payload = {
+          authenticated: true,
+          usuario: data.usuario || (fromLS && fromLS.usuario) || 'admin',
+          nome: data.nome || (fromLS && fromLS.nome) || 'Administrador',
+          isAdmin: true
+        };
+        localStorage.setItem('usuarioLogado', JSON.stringify(payload));
+        document.getElementById('loginBox').classList.add('hidden');
+        document.getElementById('painelUsuario').classList.remove('hidden');
+        document.getElementById('mensagemLogin').innerText = `Bem-vindo(a), ${payload.nome}!`;
+        montarPainelAdmin();
+        return;
       }
-    } catch (err) {
-      console.error('Erro no update', err);
-      alert('Falha de rede ou erro inesperado.');
+
+      // se não for admin, manda pro dashboard
+      window.location.href = 'dash.html';
+    } catch (e) {
+      // não faz nada: mostra o formulário de login
+      console.log('Sessão não pôde ser verificada:', e);
+    }
+  }
+  verificarSessaoExistente();
+
+  let alvo = { id: null, loginOriginal: "" };
+
+  /* =======================
+     Auto-montagem se já logado (localStorage)
+     ======================= */
+  window.onload = () => {
+    const dados = localStorage.getItem('usuarioLogado');
+    if (dados) {
+      const user = JSON.parse(dados);
+      document.getElementById('loginBox').classList.add('hidden');
+      document.getElementById('painelUsuario').classList.remove('hidden');
+      document.getElementById('mensagemLogin').innerText = `Bem-vindo(a), ${user.nome}!`;
+
+      if (user.isAdmin && !document.getElementById('adminCardsBuilt')) {
+        montarPainelAdmin();
+      } else {
+        fetch(`/usuarios?login=${encodeURIComponent(user.usuario)}`)
+          .then(res => res.json())
+          .then(resp => {
+            const lista = Array.isArray(resp) ? resp : (resp.usuarios || []);
+            if (lista.length > 0) {
+              const isAdmin = lista[0].usuario === 'admin';
+              if (isAdmin && !document.getElementById('adminCardsBuilt')) montarPainelAdmin();
+            }
+          })
+          .catch(()=>{});
+      }
     }
   };
 
-  body.querySelector(`[data-update="${d.id}"]`).addEventListener('click', (ev)=>{
-    ev.stopPropagation(); // não colapsar ao clicar no botão
-    doUpdate();
-  });
-  body.querySelector(`#user-${d.id}`).addEventListener('keydown', (ev)=>{
-    if(ev.key === 'Enter') { ev.stopPropagation(); doUpdate(); }
-  });
-
-  // Ação: Desvincular (DELETE /admin/esp32/dispositivos/:id/vinculo)
-  body.querySelector(`[data-unlink="${d.id}"]`).addEventListener('click', async (ev)=>{
-    ev.stopPropagation();
-    const ok = await confirmar(`Desvincular o dispositivo <b>${d.serialnumber}</b> do usuário atual?`);
-    if(!ok) return;
-
-    try{
-      const r = await fetch(`/admin/esp32/dispositivos/${d.id}/vinculo`, {
-        method:'DELETE',
-        credentials:'include'
-      });
-      const out = await r.json().catch(()=> ({}));
-
-      if(r.ok && out.success){
-        alert('✅ Dispositivo desvinculado com sucesso!');
-        carregarDispositivosAdmin();
-      }else{
-        alert(out.message || `Erro ao desvincular (HTTP ${r.status}).`);
-      }
-    }catch(err){
-      console.error('Erro ao desvincular', err);
-      alert('Falha de rede ao desvincular.');
-    }
-  });
-
-  return wrap;
-}
-
-async function carregarDispositivosAdmin(){
-  const lista = document.getElementById('listaDispositivos');
-  lista.innerHTML = '<p style="opacity:.7">Carregando...</p>';
-  try{
-    const r = await fetch('/esp32/dispositivos/ativos', { credentials:'include' });
-    const data = await r.json();
-    if (!r.ok || !data.success){
-      throw new Error(data.message || data.error || 'Falha ao listar');
-    }
-    if (!data.dispositivos?.length){
-      lista.innerHTML = '<p style="opacity:.7">Nenhum dispositivo vinculado.</p>';
-      return;
-    }
-    lista.innerHTML = '';
-    data.dispositivos.forEach(d => lista.appendChild(renderDispositivoItem(d)));
-
-
-
-
-  }catch(err){
-    console.error(err);
-    lista.innerHTML = '<p style="color:#ff4444">Erro ao carregar.</p>';
+  /* ------------ UI helpers ------------ */
+  function sectionCard(html){
+    const wrap = document.createElement('div');
+    wrap.className = 'card';
+    wrap.innerHTML = `<div class="card-content">${html}</div>`;
+    return wrap;
   }
-}
 
-async function adicionarSerial(){
-  const inp = document.getElementById('novoSerial');
-  const serial = (inp.value || '').trim();
-  if(!serial) { alert('Informe o serial.'); return; }
-  try{
-    const r = await fetch('/esp32/dispositivos', {
+  /* =======================
+     Montagem do Painel Admin
+     ======================= */
+  function montarPainelAdmin() {
+    if (document.getElementById('adminCardsBuilt')) return;
+    const grid = document.getElementById('adminArea');
+    grid.id = 'adminCardsBuilt';
+
+    // CARD 1: Cadastro
+    grid.appendChild(sectionCard(`
+      <h3>Cadastro</h3>
+      <p id="usuariosOnline" class="help text-primary">Usuários online: carregando...</p>
+      <input type="text" id="nomeUsuario" placeholder="Nome do novo usuário">
+      <input type="email" id="emailUsuario" placeholder="E-mail do novo usuário">
+      <input type="text" id="novoUsuario" placeholder="Login do novo usuário">
+      <input type="password" id="novaSenha" placeholder="Senha">
+      <button onclick="criarUsuario()">Criar novo usuário</button>
+      <p id="mensagem" class="help"></p>
+    `));
+
+    // CARD 2: Alterar/Excluir
+    grid.appendChild(sectionCard(`
+      <h3>Alterar Usuário</h3>
+      <p class="help text-muted">* Digite para filtrar; deixe vazio para listar todos.</p>
+      <input type="text" id="usuarioBusca" placeholder="Login do usuário a alterar" oninput="filtrarUsuarios()" autocomplete="off">
+      <div id="listaUsuarios" style="max-height: 300px; overflow-y: auto; padding-right: 5px;"></div>
+      <div id="formAlteracao" style="display: none;">
+        <input type="text" id="novoNome" placeholder="Novo nome">
+        <input type="text" id="novoEmail" placeholder="Novo email">
+        <input type="text" id="novoLogin" placeholder="Novo login">
+        <input type="password" id="novaSenhaAlterar" placeholder="Nova senha (obrigatória p/ atualizar)">
+        <button onclick="atualizarUsuario()">Salvar alterações</button>
+        <button onclick="excluirUsuarioPorLogin()" class="btn-danger" style="margin-top: 8px;">Excluir usuário</button>
+        <p id="msgAlteracao" class="help"></p>
+      </div>
+    `));
+
+    // CARD 3: Gerenciar Dispositivos
+    grid.appendChild(sectionCard(`
+      <h3>Gerenciar Dispositivos</h3>
+
+      <div class="disp-toolbar">
+        <button id="btnAtualizarDisps">Atualizar lista</button>
+        <input id="novoSerial" type="text" placeholder="Serial do ESP32">
+        <button id="btnAddSerial">Adicionar dispositivo</button>
+      </div>
+
+      <div id="listaDispositivos" style="margin-top:10px; max-height: 300px; overflow-y: auto; padding-right: 5px;"></div>
+      <small class="text-muted">Mostrando somente dispositivos vinculados a algum usuário.</small>
+    `));
+
+    // CARD 4: Logs
+    grid.appendChild(sectionCard(`
+      <h3>Logs de Login</h3>
+      <div class="filtros">
+        <input type="text" id="filtroUsuarioLog" placeholder="filtrar por login (opcional)">
+        <select id="filtroSucesso">
+          <option value="">todos</option>
+          <option value="1">sucesso</option>
+          <option value="0">falha</option>
+        </select>
+        <button onclick="toggleLogs()">Mostrar / Ocultar</button>
+        <button onclick="carregarLogs()">Atualizar</button>
+      </div>
+      <div id="logsContainer" style="display:none; margin-top: 15px;">
+        <div id="logsArea"></div>
+      </div>
+    `));
+
+    // Wires
+    document.getElementById('btnAtualizarDisps')
+      .addEventListener('click', carregarDispositivosAdmin);
+
+    document.getElementById('btnAddSerial')
+      .addEventListener('click', adicionarSerial);
+
+    // Atualiza online periodicamente
+    setInterval(mostrarUsuariosOnline, 3000);
+
+    // Inicializações
+    filtrarUsuarios();
+    carregarDispositivosAdmin();
+  }
+
+  /* ------------ Auth ------------ */
+  function login() {
+    const usuario = document.getElementById('user').value.trim();
+    const senha   = document.getElementById('pass').value;
+
+    fetch('/login', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      credentials:'include',
-      body: JSON.stringify({ serial })
-    });
-    const out = await r.json();
-    if(r.ok && out.success){
-      inp.value = '';
-      alert('Serial adicionado!');
-      carregarDispositivosAdmin();
-    }else{
-      alert(out.message || 'Erro ao adicionar.');
-    }
-  }catch(e){
-    alert('Falha de rede.');
-  }
-}
-
-/* ------------ Usuários: listar/editar/excluir ------------ */
-function filtrarUsuarios(){
-  const q = (document.getElementById('usuarioBusca')?.value || '').trim();
-  fetch('/usuarios/busca?q=' + encodeURIComponent(q))
-    .then(r=>r.json())
-    .then(data => { if(data.success) exibirUsuarios(data.usuarios); })
-    .catch(()=>{});
-}
-
-function exibirUsuarios(lista){
-  const c = document.getElementById('listaUsuarios');
-  c.innerHTML = '';
-  (lista || []).forEach(u=>{
-    const label = (u.usuario && u.usuario.trim()) ? u.usuario : '(sem login)';
-    const row = document.createElement('div');
-    row.className = 'usuario-item';
-    row.innerHTML = `
-      <span><strong>${label}</strong> <small>(id: ${u.id})</small></span>
-      <button type="button">Editar</button>
-    `;
-    row.querySelector('button').onclick = () => preencherForm(u);
-    c.appendChild(row);
-  });
-}
-
-function preencherForm(u){
-  alvo.id = u.id;
-  alvo.loginOriginal = (u.usuario || '');
-  document.getElementById('formAlteracao').style.display = 'block';
-  document.getElementById('novoLogin').value = u.usuario || '';
-  document.getElementById('novoNome').value  = u.nome    || '';
-  document.getElementById('novoEmail').value = u.email   || '';
-  document.getElementById('novaSenhaAlterar').value = '';
-  document.getElementById('msgAlteracao').innerText = '';
-}
-
-async function atualizarUsuario(){
-  const msg = (t)=> document.getElementById('msgAlteracao').innerText = t;
-  if(!alvo.id){ msg('Selecione um usuário na lista.'); return; }
-
-  const novoLogin = document.getElementById('novoLogin').value.trim();
-  const novoNome  = document.getElementById('novoNome').value.trim();
-  const novoEmail = document.getElementById('novoEmail').value.trim();
-  const novaSenha = document.getElementById('novaSenhaAlterar').value;
-
-  if(!(novoLogin && novoNome && novoEmail && novaSenha)){
-    msg('Preencha login, nome, e-mail e uma nova senha para atualizar este usuário.');
-    return;
-  }
-
-  try{
-    const url = '/usuarios/' + encodeURIComponent(alvo.id);
-    const res = await fetch(url, {
-      method: 'PUT',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ usuario: novoLogin, senha: novaSenha, nome: novoNome, email: novoEmail })
-    }).then(r=>r.json());
-
-    if(res.success){
-      msg('Usuário atualizado com sucesso!');
-      alvo.loginOriginal = novoLogin;
-      filtrarUsuarios();
-    }else{
-      msg(res.message || res.error || 'Erro ao atualizar.');
-    }
-  }catch(e){
-    console.error(e);
-    msg('Erro ao atualizar (ver console).');
-  }
-}
-
-async function excluirUsuarioPorLogin(){
-  const msg = (t)=> document.getElementById('msgAlteracao').innerText = t;
-  if(!alvo.id){ msg('Selecione um usuário na lista.'); return; }
-  if(!confirm('Excluir este usuário? Essa ação é irreversível.')) return;
-
-  try{
-    const res = await fetch('/usuarios/' + encodeURIComponent(alvo.id), { method: 'DELETE' })
-      .then(r=>r.json());
-
-    if(res.success){
-      msg('Usuário excluído com sucesso!');
-      alvo = { id:null, loginOriginal:'' };
-      document.getElementById('formAlteracao').style.display = 'none';
-      filtrarUsuarios();
-    }else{
-      msg(res.message || res.error || 'Erro ao excluir.');
-    }
-  }catch(e){
-    console.error(e);
-    msg('Erro ao excluir (ver console).');
-  }
-}
-
-/* ------------ Logs / Online ------------ */
-function mostrarUsuariosOnline(){
-  fetch('/online')
-    .then(res=>res.json())
-    .then(data=> document.getElementById('usuariosOnline').innerText = `Usuários online: ${data.online}`)
-    .catch(()=> document.getElementById('usuariosOnline').innerText = 'Usuários online: erro');
-}
-
-function toggleLogs(){
-  const logsDiv = document.getElementById('logsContainer');
-  if(!logsDiv) return;
-  logsDiv.style.display = logsDiv.style.display === 'none' ? 'block' : 'none';
-  if (logsDiv.style.display === 'block') carregarLogs();
-}
-
-function carregarLogs(){
-  const u = (document.getElementById('filtroUsuarioLog')?.value || '').trim();
-  const s = (document.getElementById('filtroSucesso')?.value || '');
-  const qs = new URLSearchParams();
-  if (u) qs.set('usuario', u);
-  if (s!=='') qs.set('sucesso', s);
-  qs.set('limit', 50);
-
-  fetch('/admin/logins?'+qs.toString(), { headers: { 'X-Admin':'1' }})
-    .then(res=>res.json())
-    .then(data=>{
-      const logsDiv = document.getElementById('logsArea');
-      logsDiv.innerHTML = '';
-      if (!data.success){ logsDiv.innerHTML = '<div style="color:#ff8a8a;">Não autorizado ou erro.</div>'; return; }
-      (data.logs||[]).forEach(log=>{
-        const d = new Date(log.criado_em);
-        const row = document.createElement('div');
-        row.className = 'log-item';
-        row.innerHTML = `<strong>${log.usuario || '(desconhecido)'}</strong> — ${log.ip} — ${d.toLocaleString()} — ${log.sucesso ? '✔' : '✖'}<br><small>${log.user_agent || ''}</small>`;
-        logsDiv.appendChild(row);
-      });
-      if (!(data.logs||[]).length) logsDiv.innerHTML = '<div style="opacity:.8;">Sem logs ainda.</div>';
+      credentials: 'include',
+      body: JSON.stringify({ usuario, senha })
     })
-    .catch(()=> document.getElementById('logsArea').innerHTML = '<div style="color:#ff8a8a;">Erro ao carregar logs.</div>');
-}
+    .then(res => res.json())
+    .then(data => {
+      if (data.success){
+        localStorage.setItem('usuarioLogado', JSON.stringify(data));
+        document.getElementById('loginBox').classList.add('hidden');
+        document.getElementById('painelUsuario').classList.remove('hidden');
+        document.getElementById('mensagemLogin').innerText = `Bem-vindo(a), ${data.nome}!`;
+        if (data.isAdmin) montarPainelAdmin();
+        else window.location.href = 'dash.html';
+      }else{
+        alert(data.message || 'Usuário ou senha inválidos!');
+      }
+    })
+    .catch(()=> alert('Sem conexão com o servidor.'));
+  }
+
+  function logout(){
+    try{
+      const u = JSON.parse(localStorage.getItem('usuarioLogado') || '{}');
+      fetch('/logout', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({usuario: u.usuario})});
+    }catch{}
+    localStorage.removeItem('usuarioLogado');
+    location.reload();
+  }
+
+  /* ------------ Cadastro ------------ */
+  function criarUsuario(){
+    const nome    = document.getElementById('nomeUsuario').value.trim();
+    const email   = document.getElementById('emailUsuario').value.trim();
+    const usuario = document.getElementById('novoUsuario').value.trim();
+    const senha   = document.getElementById('novaSenha').value.trim();
+
+    fetch('/usuarios',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ nome, email, usuario, senha })
+    })
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('mensagem').innerText = data.message || (data.success ? 'Criado!' : 'Erro.');
+      filtrarUsuarios();
+    })
+    .catch(()=> document.getElementById('mensagem').innerText = 'Erro ao criar usuário.');
+  }
+
+  // Modal confirm "SIM/Não" (auto-contido) — usado em ações admin
+  async function confirmar(mensagemHTML) {
+    return new Promise((resolve) => {
+      const ov = document.createElement('div');
+      ov.style.cssText = `
+        position:fixed; inset:0; background:rgba(0,0,0,.55);
+        display:flex; align-items:center; justify-content:center;
+        z-index: 9999; backdrop-filter: blur(2px);
+      `;
+
+      const box = document.createElement('div');
+      box.style.cssText = `
+        width:min(520px, calc(100% - 32px));
+        background:#0e1c1a; color:#e8fff6; border:1px solid #24443d;
+        border-radius:14px; box-shadow:0 20px 60px rgba(0,0,0,.45);
+        overflow:hidden; font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      `;
+      box.innerHTML = `
+        <div style="padding:14px 18px; font-weight:700; border-bottom:1px solid #1b2f2b">Confirmação</div>
+        <div style="padding:16px 18px; font-size:14px; line-height:1.45;">${mensagemHTML}</div>
+        <div style="display:flex; gap:12px; padding:14px 18px; background:#0b1715; border-top:1px solid #1b2f2b; justify-content:flex-end;">
+          <button id="btnNao" style="padding:10px 14px; border-radius:10px; border:1px solid #2a3e39; background:#142825; color:#cfeee6; cursor:pointer; min-width:90px;">Não</button>
+          <button id="btnSim" style="padding:10px 14px; border-radius:10px; border:1px solid #12d6b1; background:#12d6b1; color:#003b32; font-weight:700; cursor:pointer; min-width:90px;">SIM</button>
+        </div>
+      `;
+
+      ov.appendChild(box);
+      document.body.appendChild(ov);
+
+      const cleanup = (val) => {
+        try { document.body.removeChild(ov); } catch {}
+        resolve(val);
+      };
+
+      box.querySelector('#btnNao').addEventListener('click', () => cleanup(false));
+      box.querySelector('#btnSim').addEventListener('click', () => cleanup(true));
+
+      const keyH = (e) => {
+        if (e.key === 'Escape') { e.preventDefault(); cleanup(false); }
+        if (e.key === 'Enter')  { e.preventDefault(); cleanup(true); }
+      };
+      setTimeout(() => document.addEventListener('keydown', keyH), 0);
+
+      const obs = new MutationObserver(() => {
+        if (!document.body.contains(ov)) document.removeEventListener('keydown', keyH);
+      });
+      obs.observe(document.body, { childList: true });
+    });
+  }
+
+  /* ------------ Dispositivos (Admin) ------------ */
+  function renderDispositivoItem(d){
+    const wrap = document.createElement('div');
+    wrap.className = 'disp-item';
+    wrap.id = `disp-${d.id}`;
+
+    const head = document.createElement('div');
+    head.className = 'disp-head';
+    head.innerHTML = `
+      <div class="disp-title">
+        <div style="font-weight:700">${d.serialnumber}</div>
+        <small>Usuário atual: ${d.usuario_login || '—'}${d.fk_usuarios ? ` (id: ${d.fk_usuarios})` : ''} • Cultura: ${d.nome_cultura || 'Sem cultura'}</small>
+      </div>
+      <div class="disp-chevron">▸</div>
+    `;
+
+    const body = document.createElement('div');
+    body.className = 'disp-body';
+    body.innerHTML = `
+      <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+        <label style="font-size:12px;opacity:.85">Vincular ao usuário (ID):</label>
+        <input type="number" placeholder="ID usuário" id="user-${d.id}"
+               value="${d.fk_usuarios || ''}"
+               style="padding:6px 8px;width:160px;text-align:center;border-radius:8px;border:1px solid #2d3f3a;background:#0b1715;color:#e8fff6;">
+      </div>
+      <div class="disp-actions">
+        <button class="btn" data-update="${d.id}" style="background:#00b894;color:#fff;">Alterar usuário</button>
+        <button class="btn" data-unlink="${d.id}" style="background:#ff4444;color:#fff;">🔗 Desvincular</button>
+      </div>
+    `;
+
+    wrap.appendChild(head);
+    wrap.appendChild(body);
+
+    const chevron = head.querySelector('.disp-chevron');
+    const toggle = () => {
+      const aberto = body.style.display === 'block';
+      if (dispositivoAbertoId && dispositivoAbertoId !== d.id) {
+        const prev = document.getElementById(`disp-${dispositivoAbertoId}`);
+        if (prev) {
+          prev.querySelector('.disp-body').style.display = 'none';
+          const ch = prev.querySelector('.disp-chevron');
+          if (ch) ch.style.transform = 'rotate(0deg)';
+        }
+      }
+      if (aberto){
+        body.style.display = 'none';
+        chevron.style.transform = 'rotate(0deg)';
+        dispositivoAbertoId = null;
+      }else{
+        body.style.display = 'block';
+        chevron.style.transform = 'rotate(90deg)';
+        dispositivoAbertoId = d.id;
+      }
+    };
+    head.addEventListener('click', toggle);
+
+    const doUpdate = async () => {
+      try {
+        const inp = body.querySelector(`#user-${d.id}`);
+        const fk_usuarios = parseInt((inp.value || '').trim(), 10);
+        if (!fk_usuarios) { alert('Informe um ID de usuário válido.'); inp.focus(); return; }
+
+        const ok = await confirmar(`Alterar o ESP32 <b>${d.serialnumber}</b> para o usuário ID <b>${fk_usuarios}</b>?`);
+        if(!ok) return;
+
+        const r = await fetch(`/esp32/dispositivos/${d.id}/usuario`, {
+          method:'PUT',
+          headers:{'Content-Type':'application/json'},
+          credentials:'include',
+          body: JSON.stringify({ fk_usuarios })
+        });
+        const out = await r.json().catch(() => ({}));
+
+        if (r.ok && out.success){
+          alert('✅ Usuário do dispositivo atualizado com sucesso!');
+          carregarDispositivosAdmin();
+        } else {
+          alert(out.message || `Erro ao atualizar (HTTP ${r.status}).`);
+        }
+      } catch (err) {
+        console.error('Erro no update', err);
+        alert('Falha de rede ou erro inesperado.');
+      }
+    };
+
+    body.querySelector(`[data-update="${d.id}"]`).addEventListener('click', (ev)=>{
+      ev.stopPropagation();
+      doUpdate();
+    });
+    body.querySelector(`#user-${d.id}`).addEventListener('keydown', (ev)=>{
+      if(ev.key === 'Enter') { ev.stopPropagation(); doUpdate(); }
+    });
+
+    body.querySelector(`[data-unlink="${d.id}"]`).addEventListener('click', async (ev)=>{
+      ev.stopPropagation();
+      const ok = await confirmar(`Desvincular o dispositivo <b>${d.serialnumber}</b> do usuário atual?`);
+      if(!ok) return;
+
+      try{
+        const r = await fetch(`/admin/esp32/dispositivos/${d.id}/vinculo`, {
+          method:'DELETE',
+          credentials:'include'
+        });
+        const out = await r.json().catch(()=> ({}));
+
+        if(r.ok && out.success){
+          alert('✅ Dispositivo desvinculado com sucesso!');
+          carregarDispositivosAdmin();
+        }else{
+          alert(out.message || `Erro ao desvincular (HTTP ${r.status}).`);
+        }
+      }catch(err){
+        console.error('Erro ao desvincular', err);
+        alert('Falha de rede ao desvincular.');
+      }
+    });
+
+    return wrap;
+  }
+
+  async function carregarDispositivosAdmin(){
+    const lista = document.getElementById('listaDispositivos');
+    lista.innerHTML = '<p style="opacity:.7">Carregando...</p>';
+    try{
+      const r = await fetch('/esp32/dispositivos/ativos', { credentials:'include' });
+      const data = await r.json();
+      if (!r.ok || !data.success){
+        throw new Error(data.message || data.error || 'Falha ao listar');
+      }
+      if (!data.dispositivos?.length){
+        lista.innerHTML = '<p style="opacity:.7">Nenhum dispositivo vinculado.</p>';
+        return;
+      }
+      lista.innerHTML = '';
+      data.dispositivos.forEach(d => lista.appendChild(renderDispositivoItem(d)));
+    }catch(err){
+      console.error(err);
+      lista.innerHTML = '<p style="color:#ff4444">Erro ao carregar.</p>';
+    }
+  }
+
+  async function adicionarSerial(){
+    const inp = document.getElementById('novoSerial');
+    const serial = (inp.value || '').trim();
+    if(!serial) { alert('Informe o serial.'); return; }
+    try{
+      const r = await fetch('/esp32/dispositivos', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        credentials:'include',
+        body: JSON.stringify({ serial })
+      });
+      const out = await r.json();
+      if(r.ok && out.success){
+        inp.value = '';
+        alert('Serial adicionado!');
+        carregarDispositivosAdmin();
+      }else{
+        alert(out.message || 'Erro ao adicionar.');
+      }
+    }catch(e){
+      alert('Falha de rede.');
+    }
+  }
+
+  /* ------------ Usuários: listar/editar/excluir ------------ */
+  function filtrarUsuarios(){
+    const q = (document.getElementById('usuarioBusca')?.value || '').trim();
+    fetch('/usuarios/busca?q=' + encodeURIComponent(q))
+      .then(r=>r.json())
+      .then(data => { if(data.success) exibirUsuarios(data.usuarios); })
+      .catch(()=>{});
+  }
+
+  function exibirUsuarios(lista){
+    const c = document.getElementById('listaUsuarios');
+    c.innerHTML = '';
+    (lista || []).forEach(u=>{
+      const label = (u.usuario && u.usuario.trim()) ? u.usuario : '(sem login)';
+      const row = document.createElement('div');
+      row.className = 'usuario-item';
+      row.innerHTML = `
+        <span><strong>${label}</strong> <small>(id: ${u.id})</small></span>
+        <button type="button">Editar</button>
+      `;
+      row.querySelector('button').onclick = () => preencherForm(u);
+      c.appendChild(row);
+    });
+  }
+
+  function preencherForm(u){
+    alvo.id = u.id;
+    alvo.loginOriginal = (u.usuario || '');
+    document.getElementById('formAlteracao').style.display = 'block';
+    document.getElementById('novoLogin').value = u.usuario || '';
+    document.getElementById('novoNome').value  = u.nome    || '';
+    document.getElementById('novoEmail').value = u.email   || '';
+    document.getElementById('novaSenhaAlterar').value = '';
+    document.getElementById('msgAlteracao').innerText = '';
+  }
+
+  async function atualizarUsuario(){
+    const msg = (t)=> document.getElementById('msgAlteracao').innerText = t;
+    if(!alvo.id){ msg('Selecione um usuário na lista.'); return; }
+
+    const novoLogin = document.getElementById('novoLogin').value.trim();
+    const novoNome  = document.getElementById('novoNome').value.trim();
+    const novoEmail = document.getElementById('novoEmail').value.trim();
+    const novaSenha = document.getElementById('novaSenhaAlterar').value;
+
+    if(!(novoLogin && novoNome && novoEmail && novaSenha)){
+      msg('Preencha login, nome, e-mail e uma nova senha para atualizar este usuário.');
+      return;
+    }
+
+    try{
+      const url = '/usuarios/' + encodeURIComponent(alvo.id);
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ usuario: novoLogin, senha: novaSenha, nome: novoNome, email: novoEmail })
+      }).then(r=>r.json());
+
+      if(res.success){
+        msg('Usuário atualizado com sucesso!');
+        alvo.loginOriginal = novoLogin;
+        filtrarUsuarios();
+      }else{
+        msg(res.message || res.error || 'Erro ao atualizar.');
+      }
+    }catch(e){
+      console.error(e);
+      msg('Erro ao atualizar (ver console).');
+    }
+  }
+
+  async function excluirUsuarioPorLogin(){
+    const msg = (t)=> document.getElementById('msgAlteracao').innerText = t;
+    if(!alvo.id){ msg('Selecione um usuário na lista.'); return; }
+    if(!confirm('Excluir este usuário? Essa ação é irreversível.')) return;
+
+    try{
+      const res = await fetch('/usuarios/' + encodeURIComponent(alvo.id), { method: 'DELETE' })
+        .then(r=>r.json());
+
+      if(res.success){
+        msg('Usuário excluído com sucesso!');
+        alvo = { id:null, loginOriginal:'' };
+        document.getElementById('formAlteracao').style.display = 'none';
+        filtrarUsuarios();
+      }else{
+        msg(res.message || res.error || 'Erro ao excluir.');
+      }
+    }catch(e){
+      console.error(e);
+      msg('Erro ao excluir (ver console).');
+    }
+  }
+
+  /* ------------ Logs / Online ------------ */
+  function mostrarUsuariosOnline(){
+    fetch('/online')
+      .then(res=>res.json())
+      .then(data=> document.getElementById('usuariosOnline').innerText = `Usuários online: ${data.online}`)
+      .catch(()=> document.getElementById('usuariosOnline').innerText = 'Usuários online: erro');
+  }
+
+  function toggleLogs(){
+    const logsDiv = document.getElementById('logsContainer');
+    if(!logsDiv) return;
+    logsDiv.style.display = logsDiv.style.display === 'none' ? 'block' : 'none';
+    if (logsDiv.style.display === 'block') carregarLogs();
+  }
+
+  function carregarLogs(){
+    const u = (document.getElementById('filtroUsuarioLog')?.value || '').trim();
+    const s = (document.getElementById('filtroSucesso')?.value || '');
+    const qs = new URLSearchParams();
+    if (u) qs.set('usuario', u);
+    if (s!=='') qs.set('sucesso', s);
+    qs.set('limit', 50);
+
+    fetch('/admin/logins?'+qs.toString(), { headers: { 'X-Admin':'1' }})
+      .then(res=>res.json())
+      .then(data=>{
+        const logsDiv = document.getElementById('logsArea');
+        logsDiv.innerHTML = '';
+        if (!data.success){ logsDiv.innerHTML = '<div style="color:#ff8a8a;">Não autorizado ou erro.</div>'; return; }
+        (data.logs||[]).forEach(log=>{
+          const d = new Date(log.criado_em);
+          const row = document.createElement('div');
+          row.className = 'log-item';
+          row.innerHTML = `<strong>${log.usuario || '(desconhecido)'}</strong> — ${log.ip} — ${d.toLocaleString()} — ${log.sucesso ? '✔' : '✖'}<br><small>${log.user_agent || ''}</small>`;
+          logsDiv.appendChild(row);
+        });
+        if (!(data.logs||[]).length) logsDiv.innerHTML = '<div style="opacity:.8;">Sem logs ainda.</div>';
+      })
+      .catch(()=> document.getElementById('logsArea').innerHTML = '<div style="color:#ff8a8a;">Erro ao carregar logs.</div>');
+  }
 </script>
 </body>
 </html>
-

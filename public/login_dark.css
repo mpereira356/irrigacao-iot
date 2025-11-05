@@ -246,7 +246,7 @@ button:active{ transform: translateY(1px); }
   background-color: #23262a;
 }
 .usuario-item button{
-  background-color: var(--color-danger);
+      background-color: var(--color-primary);
   color:#fff;
   padding:6px 12px;
   width:auto;

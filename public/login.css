@@ -423,3 +423,15 @@ button:active{ transform: translateY(1px); }
 .text-danger { color: var(--color-danger); }
 .text-success { color: var(--color-success); }
 .text-muted { color: var(--text-muted); }
+
+
+#theme-toggle {
+  background-color: #96A78D;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 8px;
+}
+#theme-toggle:hover {
+  filter: brightness(0.9);
+}
