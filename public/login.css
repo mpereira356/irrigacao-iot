@@ -245,13 +245,26 @@ button:active{ transform: translateY(1px); }
 .usuario-item:hover {
   background-color: #F0F0F0; /* Levemente mais escuro no hover */
 }
-.usuario-item button{
-  background-color: var(--color-danger);
-  color:#fff;
-  padding:6px 12px;
-  width:auto;
+.usuario-item button {
+  background-color: #96A78D;
+  color: #fff;
+  padding: 6px 12px;
+  width: auto;
   font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.1s ease;
 }
+
+.usuario-item button:hover {
+  background-color: #7c8b75; /* cor um pouco mais escura no hover */
+
+}
+
+
+
+
 .usuario-info {
   display: flex;
   flex-direction: column;
@@ -425,13 +438,3 @@ button:active{ transform: translateY(1px); }
 .text-muted { color: var(--text-muted); }
 
 
-#theme-toggle {
-  background-color: #96A78D;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  padding: 8px;
-}
-#theme-toggle:hover {
-  filter: brightness(0.9);
-}
