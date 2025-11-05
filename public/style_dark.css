@@ -54,6 +54,13 @@ body {
 }
 
 /* ===== Botões ===== */
+
+#btnAddDisp{
+width: 100%;
+}
+
+
+
 .botao-config {
   background-color: var(--bg-panel);
   color: var(--text-light);

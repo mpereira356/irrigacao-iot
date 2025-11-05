@@ -119,6 +119,10 @@ body {
   color: var(--text-light);
 }
 
+#btnAddDisp{
+width: 100%;
+}
+
 .botao-config,
 .botao-add {
   background: var(--color-primary);
@@ -130,6 +134,8 @@ body {
   cursor: pointer;
   transition: filter 0.3s ease, transform .1s ease;
 }
+
+
 
 .botao-add:hover,
 .botao-config:hover {
