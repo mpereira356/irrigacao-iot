@@ -95,7 +95,8 @@
         <div class="card">
           <h2>Quantidade de Água</h2>
           <p id="quantidadeAgua">--- L</p>
-          <small id="areaInfo" style="font-size: 11px; opacity: 0.7;">Área: --- m²</small>
+          <!-- Padrão já com 2 m² -->
+          <small id="areaInfo" style="font-size: 11px; opacity: 0.7;">Unidade: 2 m²</small>
         </div>
       </div>
 
@@ -379,7 +380,7 @@
       usuarioAtual = user.usuario;
       usuarioId = user.id;
 
-      document.getElementById('boasVindas').innerHTML = `Bem vindo <strong>${user.nome}</strong>`;
+      document.getElementById('boasVindas').innerHTML = `Bem-vindo <strong>${user.nome}!</strong>`;
 
       await carregarCulturas();
       carregarDispositivos();
@@ -572,7 +573,6 @@
               <strong>${disp.nome_cultura || 'Sem cultura'}</strong><br>
               <small>Serial: ${disp.serialnumber}</small>
             </div>
-            
           </div>`;
         item.onclick = () => selecionarDispositivo(disp);
         lista.appendChild(item);
@@ -695,6 +695,9 @@
     }
 
     function carregarProjecaoIrrigacao(dispositivoId) {
+      // Unidade fixa: 2 m²
+      const AREA_UNIDADE_M2 = 2;
+
       fetch(`/esp32/projecao/${dispositivoId}`, { credentials: 'include' })
         .then(res => {
           if (res.status === 401) {
@@ -706,14 +709,17 @@
         })
         .then(data => {
           if (!data) return;
+
           if (data.success && data.projecao) {
             const p = data.projecao;
+
+            // Próxima irrigação / dias restantes
             if (p.data_proxima_irrigacao) {
               const dataIrrigacao = new Date(p.data_proxima_irrigacao);
               const dataFormatada = dataIrrigacao.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
               document.getElementById('proximaIrrigacao').innerText = dataFormatada;
 
-              if (p.dias_restantes !== null) {
+              if (p.dias_restantes !== null && p.dias_restantes !== undefined) {
                 if (p.dias_restantes > 0) document.getElementById('diasRestantes').innerText = `Em ${p.dias_restantes} dia(s)`;
                 else if (p.dias_restantes === 0) document.getElementById('diasRestantes').innerText = 'Hoje';
                 else document.getElementById('diasRestantes').innerText = `Atrasado há ${Math.abs(p.dias_restantes)} dia(s)`;
@@ -723,18 +729,27 @@
               document.getElementById('diasRestantes').innerText = 'Sem dados de irrigação';
             }
 
-            if (p.quantidade_agua_litros) {
-              document.getElementById('quantidadeAgua').innerText = `${p.quantidade_agua_litros.toFixed(0)} L`;
-              document.getElementById('areaInfo').innerText = `Área: ${p.area_cultivada_m2} m²`;
+            // Água Necessária (L/m²) da cultura do dispositivo
+            const aguaNecLporM2 = (dispositivoAtual && dispositivoAtual.agua_necessaria != null)
+              ? Number(dispositivoAtual.agua_necessaria)
+              : NaN;
+
+            // Quantidade de Água = (L/m²) × 2 m²
+            if (Number.isFinite(aguaNecLporM2)) {
+              const qtdLitros = aguaNecLporM2 * AREA_UNIDADE_M2;
+              document.getElementById('quantidadeAgua').innerText = `${qtdLitros.toFixed(0)} L`;
             } else {
               document.getElementById('quantidadeAgua').innerText = '--- L';
-              document.getElementById('areaInfo').innerText = 'Área: ---';
             }
+
+            // Exibe a unidade fixa
+            document.getElementById('areaInfo').innerText = `Unidade: ${AREA_UNIDADE_M2} m²`;
+
           } else {
             document.getElementById('proximaIrrigacao').innerText = '---';
             document.getElementById('diasRestantes').innerText = 'Sem dados';
             document.getElementById('quantidadeAgua').innerText = '--- L';
-            document.getElementById('areaInfo').innerText = 'Área: ---';
+            document.getElementById('areaInfo').innerText = 'Unidade: 2 m²';
           }
         })
         .catch(err => console.error('Erro ao carregar projeção de irrigação:', err));
