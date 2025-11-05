@@ -31,14 +31,16 @@ body {
 
 /* Marca */
 .sidebar h1 {
-  font-size: 24px;
-  margin-bottom: 30px;
-  color: var(--bg-panel);
-}
+	  font-size: 24px;
+	  margin-bottom: 30px;
+	  color: var(--bg-panel);
+	}
 
 .sidebar p {
+  font-size: 14px; /* Padronizado com dark theme */
   color: var(--bg-panel);
   opacity: 0.9;
+  margin-bottom: 20px; /* Padronizado com dark theme */
 }
 
 /* ===== Conteúdo ===== */
@@ -62,19 +64,19 @@ body {
   padding: 20px;
   text-align: center;
   border: 1px solid var(--border-color);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4); /* Padronizado com dark theme */
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.4); /* Padronizado com dark theme */
 }
 
 .card h2 {
   margin: 0 0 10px;
   font-size: 18px;
-  color: var(--color-primary);
+  color: var(--color-secondary); /* Padronizado com dark theme */
   font-weight: 600;
 }
 
@@ -82,7 +84,7 @@ body {
   font-size: 24px;
   margin: 0;
   font-weight: 700;
-  color: var(--text-light);
+  color: var(--color-primary); /* Padronizado com dark theme */
 }
 
 /* ===== Gráfico ===== */
@@ -98,7 +100,7 @@ body {
   margin-left: auto;
   margin-right: auto;
   border: 1px solid var(--border-color);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4); /* Padronizado com dark theme */
 }
 
 /* Título do gráfico dentro de .content */
@@ -107,10 +109,16 @@ body {
   margin-bottom: 5px;
   text-align: center;
   color: var(--text-light);
-  font-size: 22px;
+  /* font-size: 22px; - Removido para padronizar com dark theme, que não tem font-size aqui */
 }
 
 /* ===== Botões ===== */
+
+#btnAddDisp{
+  background-color: var(--bg-panel);
+  color: var(--text-light);
+}
+
 .botao-config,
 .botao-add {
   background: var(--color-primary);
@@ -132,7 +140,7 @@ body {
 
 .botao-logout {
   background-color: var(--color-danger);
-  color: var(--bg-panel);
+  color: var(--bg-panel); /* Mantido o var(--bg-panel) para o tema claro */
   border: none;
   padding: 8px 14px;
   border-radius: 6px;
@@ -147,7 +155,7 @@ body {
 
 /* ===== Lista de Dispositivos ===== */
 #listaDispositivos h3 {
-  color: #343a40;
+  color: var(--color-primary); /* Padronizado com dark theme */
   font-size: 14px;
   margin-bottom: 10px;
 }
@@ -165,21 +173,24 @@ body {
   border: 1px solid var(--border-color);
 }
 .dispositivo-item:hover {
-  background-color: #F0F0F0;
+  background-color: #F0F0F0; /* Mantido o F0F0F0 para o tema claro */
   transform: translateY(-1px);
 }
 .dispositivo-item.selecionado {
-  background-color: #F0F0F0;
+  background-color: var(--bg-dark);
   border: 2px solid var(--color-primary);
 }
+
 .dispositivo-item.selecionado:hover {
   transform: none; /* Evita o efeito de hover quando selecionado */
 }
 
-.dispositivo-info { display: flex; flex-direction: column; gap: 4px; }
-.dispositivo-info strong { font-size: 13px; color: #343a40; }
-.dispositivo-info small  { font-size: 11px; color: var(--text-muted); opacity: 1; }
-
+.dispositivo-info strong {
+  color: var(--text-light);
+}
+.dispositivo-info small {
+  color: var(--text-muted);
+}
 .btn-remover {
   background-color: var(--color-danger);
   color: var(--bg-panel);
@@ -244,7 +255,7 @@ body {
 .modal-content select {
   width: 100%;
   padding: 12px;
-  background-color: #F0F0F0;
+  background-color: #F0F0F0; /* Mantido o F0F0F0 para o tema claro */
   border: 1px solid var(--border-color);
   color: var(--text-light);
   border-radius: 8px;
@@ -263,7 +274,7 @@ body {
 .modal .btn {
   width: 100%;
   background-color: var(--color-primary);
-  color: var(--bg-panel);
+  color: var(--bg-panel); /* Mantido o var(--bg-panel) para o tema claro */
   border: none;
   padding: 12px;
   border-radius: 8px;

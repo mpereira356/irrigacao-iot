@@ -14,7 +14,7 @@
     <h1>SmartFarm</h1>
     <p>Irrigação Inteligente</p>
     
-    <button id="btnAddDisp" class="botao-add" style="background:#F0F0F0; color: #343a40;">➕ Adicionar dispositivo</button>
+    <button id="btnAddDisp" class="botao-add">➕ Adicionar dispositivo</button>
 
     <div id="listaDispositivos" style="margin-top: 20px;">
       <p style="font-size: 12px; opacity: 0.7;">Carregando dispositivos...</p>
@@ -25,9 +25,16 @@
     <div id="cabecalhoUsuario" style="display: flex; justify-content: space-between; align-items: center; margin: 20px;">
       <h2 id="boasVindas" style="margin: 0;"></h2>
       <div style="display: flex; gap: 10px;">
-        <button id="theme-toggle" onclick="toggleTheme()" class="botao-add">Tema Dark</button>
-        <button id="btnAbrirConfig" class="botao-add">⚙️ Configurações</button>
-        <button class="botao-logout" onclick="logout()">Sair</button>
+        <button id="theme-toggle" onclick="toggleTheme()" class="botao-add" aria-label="Alternar tema">
+          <img id="themeIcon" src="img/day.png" alt="Tema claro" style="width:20px;height:20px;vertical-align:middle;">
+        </button>
+        <button id="btnAbrirConfig" class="botao-add icon-only" aria-label="Configurações">
+          <img src="img/settings.png" alt="Configurações" style="width:20px;height:20px;vertical-align:middle;">
+        </button>
+
+        <button class="botao-logout" onclick="logout()">
+          <img src="img/exit.png" alt="Sair" style="width:20px; height:20px; vertical-align:middle;">
+        </button>
       </div>
     </div>
       
@@ -40,7 +47,7 @@
     <div id="conteudoDispositivo">
       <div id="infoDispositivo">
         <h3 id="nomeDispositivo" style="margin: 0 0 5px 0;">Carregando...</h3>
-        <p id="serialDispositivo" style="margin: 0; font-size: 12px; opacity: 0.7;">Serial: ---</p>
+        <p id="serialDispositivo" style="margin: 0 0 10px 0; font-size: 12px; opacity: 0.7;">Serial: ---</p>
 
         <!-- Botão Editar -->
         <button id="btnEditarDisp" class="botao-add"> Editar</button>
@@ -221,35 +228,47 @@
     // Lógica de Alternância de Tema
     function toggleTheme() {
       const link = document.getElementById('theme-link');
-      const toggleBtn = document.getElementById('theme-toggle');
-      
-      let currentTheme = link.getAttribute('href');
+      const icon = document.getElementById('themeIcon');
+
+      const currentTheme = link.getAttribute('href');
       let newTheme = '';
-      let newText = '';
+      let newIcon = '';
+      let newAlt  = '';
 
       if (currentTheme === 'style.css') {
+        // indo para o dark
         newTheme = 'style_dark.css';
-        newText = 'Tema Claro';
+        newIcon  = 'img/day.png';
+        newAlt   = 'Tema escuro';
       } else {
+        // voltando para o claro
         newTheme = 'style.css';
-        newText = 'Tema Dark';
+        newIcon  = 'img/night.png';
+        newAlt   = 'Tema claro';
       }
 
       link.setAttribute('href', newTheme);
       localStorage.setItem('dashTheme', newTheme);
-      
-      if (toggleBtn) toggleBtn.innerText = newText;
+
+      if (icon) {
+        icon.src = newIcon;
+        icon.alt = newAlt;
+      }
     }
 
     // Aplica o tema salvo ao carregar
     document.addEventListener('DOMContentLoaded', () => {
       const savedTheme = localStorage.getItem('dashTheme');
       const link = document.getElementById('theme-link');
-      const toggleBtn = document.getElementById('theme-toggle');
+      const icon = document.getElementById('themeIcon');
 
       if (savedTheme && savedTheme !== 'style.css') {
+        // dark salvo
         link.setAttribute('href', savedTheme);
-        if (toggleBtn) toggleBtn.innerText = 'Tema Claro';
+        if (icon) { icon.src = 'img/day.png'; icon.alt = 'Tema escuro'; }
+      } else {
+        // claro (padrão)
+        if (icon) { icon.src = 'img/night.png'; icon.alt = 'Tema claro'; }
       }
     });
 
@@ -541,7 +560,7 @@
 
     function exibirListaDispositivos(dispositivos) {
       const lista = document.getElementById('listaDispositivos');
-      lista.innerHTML = '<h3 style="font-size: 14px; margin-bottom: 10px;">Meus Dispositivos</h3>';
+      lista.innerHTML = '<h3 style="font-size: 14px; color: #F0F0F0; margin-bottom: 10px;">Meus Dispositivos</h3>';
 
       dispositivos.forEach(disp => {
         const item = document.createElement('div');
@@ -803,7 +822,7 @@
 
         btnExcluir.style.display = 'block';
       } else {
-        titulo.textContent = '➕ Adicionar dispositivo';
+        titulo.textContent = 'Adicionar dispositivo';
         document.getElementById('dispId').value = '';
 
         const serialEl = document.getElementById('dispSerial');
