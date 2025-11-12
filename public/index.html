@@ -4,17 +4,37 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>SmartFarm | Irrigação Inteligente</title>
-  <meta name="description" content="Monitore umidade do solo, automatize irrigação e reduza custos com a SmartFarm AI. Painel em tempo real e alertas inteligentes.">
-  <link rel="stylesheet" href="style_index.css">
-  <link rel="icon" type="image/png" href="sflogo.png">
 
+  <!-- SEO (apenas informação, não altera a estética) -->
+  <meta name="description" content="Monitore umidade do solo, automatize irrigação e reduza custos com a SmartFarm AI. Painel em tempo real, LoRa + ESP32 e alertas inteligentes para cada cultura.">
+  <meta name="keywords" content="irrigação inteligente, smartfarm, IoT agrícola, agricultura de precisão, umidade do solo, ESP32, LoRa, automação rural, IA">
+  <meta property="og:title" content="SmartFarm | Irrigação Inteligente">
+  <meta property="og:description" content="Economize água e aumente a produtividade com sensores, IA e automação por cultura.">
+  <meta property="og:image" content="/logo.png.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+
+  <!-- Dados estruturados simples -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "SmartFarm",
+    "url": "https://smartfarm.local/",
+    "logo": "https://smartfarm.local//logo.png.png",
+    "description": "Solução de irrigação inteligente com sensores, IA e automação por cultura."
+  }
+  </script>
+
+  <link rel="stylesheet" href="style_index.css">
+  <link rel="icon" type="image/png" href="/logo.png.png">
 </head>
 <body class="landing">
   <!-- TOPO -->
   <header class="l-topbar">
     <div class="l-container">
       <div class="l-brand">
-        <img src="sflogo.png" alt="Logo" class="l-logo">
+        <img src="/logo.png.png" alt="Logo" class="l-logo">
         <strong>SmartFarm</strong>
       </div>
       <nav class="l-menu" id="lMenu">
@@ -34,16 +54,17 @@
       <div class="l-container l-hero-grid">
         <div>
           <h1>Irrigação inteligente para <span class="l-accent">economizar água</span> e produzir mais</h1>
-          <p>Monitore solo e clima e acione a irrigação automaticamente. Parâmetros por cultura.</p>
+          <p>Monitore solo e clima e acione a irrigação automaticamente. Perfis por cultura, previsões com IA e histórico para tomada de decisão.</p>
           <div class="l-actions">
             <a href="#contato" class="l-btn l-btn-solid">Quero ser cliente</a>
             <a href="#beneficios" class="l-btn l-btn-outline">Ver benefícios</a>
           </div>
           <ul class="l-highlights">
-            <li>Até 30% menos água</li>
-            <li>Automação por sensores</li>
-            <li>Perfil por plantação</li>
+            <li>Até 30% menos água* </li>
+            <li>Automação por sensores (ESP32 + LoRa)</li>
+            <li>Perfil e regras por plantação</li>
           </ul>
+          <small class="l-muted">*Resultados de ensaios controlados e simulações. Pode variar conforme cultura, solo e manejo.</small>
         </div>
 
         <div class="l-card">
@@ -64,10 +85,24 @@
       <div class="l-container">
         <h2 class="l-title">Por que escolher a <span class="l-accent">SmartFarm</span>?</h2>
         <div class="l-grid-3">
-          <div class="l-feature"><h3>Economia de água</h3><p>Irriga só quando precisa, com base em dados.</p></div>
-          <div class="l-feature"><h3>Automação</h3><p>Sensores + ESP32 acionam bomba automaticamente.</p></div>
-          <div class="l-feature"><h3>Personalização</h3><p>Parâmetros por cultura e talhão.</p></div>
+          <div class="l-feature">
+            <h3>Economia de água</h3>
+            <p>Irrigue apenas quando necessário com base em leituras de umidade do solo, clima local e histórico. Reduza desperdícios e custos operacionais.</p>
+          </div>
+          <div class="l-feature">
+            <h3>Automação</h3>
+            <p>Sensores e atuadores acionam bomba e válvulas conforme regras e previsões. Você define limites, o sistema executa com segurança.</p>
+          </div>
+          <div class="l-feature">
+            <h3>Personalização</h3>
+            <p>Parâmetros por cultura, talhão e solo. Perfis independentes para café, soja, milho, hortaliças e muito mais.</p>
+          </div>
         </div>
+        <ul class="l-bullets" style="margin-top:1rem">
+          <li>Alertas de anomalia (bateria baixa, sensor desconectado, falha de rede)</li>
+          <li>Histórico e relatórios para auditoria hídrica</li>
+          <li>Funciona mesmo com internet instável (buffer local + sincronização)</li>
+        </ul>
       </div>
     </section>
 
@@ -76,10 +111,11 @@
       <div class="l-container">
         <h2 class="l-title">Como funciona</h2>
         <ol class="l-steps">
-          <li><span class="l-badge">1</span> Instale sensores e módulo.</li>
-          <li><span class="l-badge">2</span> Cadastre culturas no painel.</li>
-          <li><span class="l-badge">3</span> O sistema monitora e irriga.</li>
+          <li><span class="l-badge">1</span> Instale sensores e módulo (ESP32 + LoRa) nos pontos de interesse.</li>
+          <li><span class="l-badge">2</span> Cadastre culturas, talhões e limites de umidade no painel web.</li>
+          <li><span class="l-badge">3</span> O sistema monitora solo e clima, prevê a próxima irrigação e aciona automaticamente a bomba.</li>
         </ol>
+        <p class="l-muted" style="margin-top:0.75rem">A previsão utiliza modelos de aprendizado de máquina e pode considerar previsão de chuva local.</p>
       </div>
     </section>
 
@@ -88,43 +124,37 @@
       <div class="l-container">
         <h2 class="l-title">Um vislumbre do painel</h2>
         <div class="l-screens">
-          <div class="l-screen"></div>
-          <div class="l-screen"></div>
-          <div class="l-screen"></div>
+          <div class="l-screen" title="Dashboard com KPIs de umidade, temperatura e próximas irrigações"></div>
+          <div class="l-screen" title="Mapa de talhões e status de sensores em tempo real"></div>
+          <div class="l-screen" title="Relatórios e histórico de consumo hídrico por cultura"></div>
         </div>
+        <p class="l-muted" style="margin-top:0.75rem">A interface pode variar conforme o plano e os sensores instalados.</p>
       </div>
     </section>
 
+    <!-- MISSÃO / VISÃO / VALORES -->
     <section id="missao" class="l-section">
       <div class="l-container">
         <h2>Nossa Missão</h2>
 
         <div class="missao-bloco">
-          <h3>🌱 Missão</h3>
-          <p>
-            Promover a transformação digital no campo por meio de soluções tecnológicas inteligentes, 
-            acessíveis e sustentáveis, ajudando produtores a otimizar recursos, aumentar a produtividade 
-            e reduzir impactos ambientais.
-          </p>
+          <h3>Missão</h3>
+          <p>Promover a transformação digital no campo com soluções acessíveis e sustentáveis que otimizem água e energia, elevem a produtividade e simplifiquem o dia a dia do produtor.</p>
         </div>
 
         <div class="missao-bloco">
-          <h3>👁️ Visão</h3>
-          <p>
-            Ser referência em inovação para a agricultura sustentável, contribuindo para um futuro 
-            onde tecnologia e natureza caminham juntas, garantindo segurança alimentar e preservação 
-            do meio ambiente.
-          </p>
+          <h3>Visão</h3>
+          <p>Ser referência em inovação para agricultura sustentável, integrando dados, IA e automação para um manejo hídrico preciso em qualquer propriedade.</p>
         </div>
 
         <div class="missao-bloco">
-          <h3>💡 Valores</h3>
+          <h3>Valores</h3>
           <ul>
-            <li><strong>Inovação:</strong> Buscar constantemente novas soluções tecnológicas.</li>
-            <li><strong>Sustentabilidade:</strong> Respeitar o meio ambiente em cada etapa do processo.</li>
-            <li><strong>Confiabilidade:</strong> Entregar resultados consistentes e transparentes.</li>
-            <li><strong>Colaboração:</strong> Trabalhar lado a lado com produtores, parceiros e comunidades.</li>
-            <li><strong>Responsabilidade Social:</strong> Contribuir para o desenvolvimento justo e sustentável da sociedade.</li>
+            <li><strong>Inovação:</strong> tecnologia útil, simples e escalável.</li>
+            <li><strong>Sustentabilidade:</strong> uso consciente de recursos naturais.</li>
+            <li><strong>Confiabilidade:</strong> dados transparentes e decisões rastreáveis.</li>
+            <li><strong>Colaboração:</strong> construído com produtores e parceiros.</li>
+            <li><strong>Responsabilidade Social:</strong> impacto positivo local e regional.</li>
           </ul>
         </div>
 
@@ -136,42 +166,43 @@
       <div class="l-container l-form-grid">
         <div>
           <h2 class="l-title">Tornar-se cliente</h2>
-          <p>Preencha seus dados para contato e ativação.</p>
+          <p>Preencha seus dados para contato e ativação. Nossa equipe avalia seu cenário e indica o melhor kit de sensores.</p>
           <ul class="l-bullets">
-            <li>Implantação guiada</li>
-            <li>Teste no seu cenário</li>
-            <li>Plano sob medida</li>
+            <li>Implantação guiada em etapas</li>
+            <li>Teste no seu cenário real</li>
+            <li>Plano sob medida por cultura e área</li>
           </ul>
+          <small class="l-muted">Ao enviar, você concorda com o contato para fins comerciais e técnicos (LGPD).</small>
         </div>
 
-        <form id="leadForm" class="l-card">
+        <form id="leadForm" class="l-card" novalidate>
           <div class="l-field">
             <label for="nome">Nome*</label>
-            <input id="nome" name="nome" required>
+            <input id="nome" name="nome" required autocomplete="name" placeholder="Seu nome completo">
           </div>
           <div class="l-two">
             <div class="l-field">
               <label for="email">E-mail*</label>
-              <input id="email" name="email" type="email" required>
+              <input id="email" name="email" type="email" required autocomplete="email" placeholder="voce@exemplo.com">
             </div>
             <div class="l-field">
               <label for="telefone">WhatsApp*</label>
-              <input id="telefone" name="telefone" required>
+              <input id="telefone" name="telefone" required inputmode="tel" placeholder="(DDD) 9 9999-9999">
             </div>
           </div>
           <div class="l-two">
             <div class="l-field">
               <label for="cultura">Cultura*</label>
-              <input id="cultura" name="cultura" required placeholder="Soja, milho, hortaliças...">
+              <input id="cultura" name="cultura" required placeholder="Soja, milho, café, hortaliças...">
             </div>
             <div class="l-field">
               <label for="area">Área (ha)</label>
-              <input id="area" name="area" type="number" step="0.01" min="0">
+              <input id="area" name="area" type="number" step="0.01" min="0" placeholder="Ex.: 2.5">
             </div>
           </div>
           <div class="l-field">
             <label for="mensagem">Mensagem</label>
-            <textarea id="mensagem" name="mensagem" rows="4"></textarea>
+            <textarea id="mensagem" name="mensagem" rows="4" placeholder="Conte um pouco sobre seu cenário (solo, irrigação atual, desafios)"></textarea>
           </div>
           <div class="l-field l-chk">
             <input id="aceite" type="checkbox" required>
@@ -188,10 +219,10 @@
     <div class="l-container l-footer-grid">
       <div>
         <div class="l-brand">
-        <img src="sflogo.png" alt="Logo" class="l-logo">
-        <strong>SmartFarm</strong>
-      </div>
-        <p class="l-muted">Irrigação inteligente e personalizada.</p>
+          <img src="/logo.png.png" alt="Logo" class="l-logo">
+          <strong>SmartFarm</strong>
+        </div>
+        <p class="l-muted">Irrigação inteligente e personalizada por cultura, com dados transparentes para decisões melhores.</p>
       </div>
       <div>
         <h4>Links</h4>
@@ -204,31 +235,63 @@
       </div>
       <div>
         <h4>Contato</h4>
-        <p class="l-muted">contato@smartfarm.com<br>+55 (11) 99999‑9999</p>
+        <p class="l-muted">contato@smartfarm.com<br>+55 (11) 99999-9999</p>
+        <p class="l-muted">Atendimento: Seg–Sex, 9h às 18h (BRT)</p>
       </div>
     </div>
-    <div class="l-sub">© <span id="year"></span> SmartFarm — Todos os direitos reservados.</div>
+    <div class="l-sub">© <span id="year"></span> SmartFarm — Todos os direitos reservados. <span class="l-muted">LGPD: tratamos somente os dados necessários para contato e proposta.</span></div>
   </footer>
 
   <script>
+    // ano
     document.getElementById('year').textContent = new Date().getFullYear();
-    const b = document.getElementById('lBurger'); const m = document.getElementById('lMenu');
+
+    // menu mobile
+    const b = document.getElementById('lBurger'); 
+    const m = document.getElementById('lMenu');
     b.addEventListener('click', ()=> m.classList.toggle('open'));
 
+    // form
     const form = document.getElementById('leadForm');
     const msg = document.getElementById('mensagemForm');
+
+    // pequena validação de campos obrigatórios (não altera estética)
+    function camposValidos(data){
+      if(!data.nome || !data.email || !data.telefone || !document.getElementById('aceite').checked){
+        return false;
+      }
+      return true;
+    }
+
     form.addEventListener('submit', async (e)=>{
-      e.preventDefault(); msg.textContent='Enviando...';
+      e.preventDefault();
       const data = Object.fromEntries(new FormData(form).entries());
+      if(!camposValidos(data)){ 
+        msg.textContent = 'Preencha os campos obrigatórios e aceite o contato.'; 
+        msg.classList.remove('ok');
+        return;
+      }
+      msg.textContent='Enviando...';
       try{
-        const res = await fetch('/api/leads/create.php', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-        const out = await res.json();
-        if(res.ok && out.success){ msg.textContent='Recebido! Em breve falamos com você.'; msg.classList.add('ok'); form.reset(); }
-        else throw new Error(out.message || 'Falha ao enviar.');
-      }catch(err){ msg.textContent=err.message; msg.classList.remove('ok'); }
+        const res = await fetch('/api/leads/create.php', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify(data)
+        });
+        const out = await res.json().catch(()=> ({}));
+        if(res.ok && (out.success === true || out.status === 'ok')){
+          msg.textContent='Recebido! Em breve falamos com você.';
+          msg.classList.add('ok');
+          form.reset();
+        } else {
+          const erro = out.message || 'Falha ao enviar. Tente novamente em instantes.';
+          throw new Error(erro);
+        }
+      }catch(err){
+        msg.textContent = err.message || 'Não foi possível enviar agora.';
+        msg.classList.remove('ok');
+      }
     });
   </script>
 </body>
 </html>
-
-
