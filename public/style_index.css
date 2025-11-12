@@ -284,8 +284,17 @@ body.landing{
   background: linear-gradient(180deg, #FFFFFF, #F6FAF7);
   position:relative; overflow:hidden; transition:all .3s ease;
   box-shadow:0 8px 24px rgba(60,80,70,.08);
+  cursor: zoom-in; /* agora clicável para abrir modal */
 }
 .l-screen:hover{ transform:scale(1.02); }
+/* ícone/indicador de zoom */
+.l-screen::after{
+  content: "🔍";
+  position: absolute; right: 10px; bottom: 10px;
+  font-size: 18px; opacity: .85;
+  background: rgba(255,255,255,.7);
+  border-radius: 10px; padding: 2px 6px;
+}
 
 /* Formulário */
 .l-form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:start; }
@@ -416,14 +425,21 @@ body.landing{
   outline:2px solid var(--c-prim); outline-offset:2px;
 }
 
-/* Telas da demo com imagem (opcional) */
-.l-screen:nth-child(1),
-.l-screen:nth-child(2),
+/* Telas da demo com imagem (mantém background via CSS) */
+.l-screen:nth-child(1){
+  background-image: url("painel1.png");
+  background-size: cover; background-position: center;
+}
+.l-screen:nth-child(2){
+  background-image: url("painel2.png");
+  background-size: cover; background-position: center;
+}
 .l-screen:nth-child(3){
-  background-image: url("painel.png");
+  background-image: url("painel3.png");
   background-size: cover; background-position: center;
 }
 
+/* Botão flutuante WhatsApp */
 .whatsapp-bolha {
   position: fixed;
   bottom: 20px;
@@ -436,6 +452,34 @@ body.landing{
   z-index: 999;
   transition: transform 0.2s ease;
 }
-.whatsapp-bolha:hover {
-  transform: scale(1.1);
+.whatsapp-bolha:hover { transform: scale(1.1); }
+
+/* ============ LIGHTBOX (MODAL) ============ */
+#imgModal {
+  padding: 0;
+  border: none;
+  background: transparent;
+  width: 100vw; max-width: 100vw;
+  height: 100vh; max-height: 100vh;
 }
+#imgModal::backdrop{ background: rgba(0,0,0,.75); }
+#imgModal img{
+  display: block;
+  max-width: 92vw;
+  max-height: 88vh;
+  width: auto; height: auto;
+  margin: 0 auto;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.4);
+}
+#closeModal{
+  position: absolute;
+  top: 16px; right: 20px;
+  width: 44px; height: 44px;
+  border: none; border-radius: 50%;
+  background: rgba(255,255,255,.9);
+  font-size: 20px; font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+}
+#closeModal:hover{ transform: scale(1.05); }

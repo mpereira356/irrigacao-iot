@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>SmartFarm | Irrigação Inteligente</title>
 
-
   <!-- Dados estruturados simples -->
   <script type="application/ld+json">
   {
@@ -43,7 +42,6 @@
   </header>
 
   <main>
-    
     <!-- HERO -->
     <section class="l-hero">
       <div class="l-container l-hero-grid">
@@ -118,10 +116,12 @@
     <section id="demo" class="l-section">
       <div class="l-container">
         <h2 class="l-title">Um vislumbre do painel</h2>
+
+        <!-- IMPORTANTE: data-img para abrir a imagem correta no modal -->
         <div class="l-screens">
-          <div class="l-screen" title="Dashboard com KPIs de umidade, temperatura e próximas irrigações"></div>
-          <div class="l-screen" title="Mapa de talhões e status de sensores em tempo real"></div>
-          <div class="l-screen" title="Relatórios e histórico de consumo hídrico por cultura"></div>
+          <div class="l-screen" data-img="painel1.png" title="Dashboard com KPIs de umidade, temperatura e próximas irrigações"></div>
+          <div class="l-screen" data-img="painel2.png" title="Mapa de talhões e status de sensores em tempo real"></div>
+          <div class="l-screen" data-img="painel3.png" title="Relatórios e histórico de consumo hídrico por cultura"></div>
         </div>
         <p class="l-muted" style="margin-top:0.75rem">A interface pode variar conforme o plano e os sensores instalados.</p>
       </div>
@@ -237,6 +237,12 @@
     <div class="l-sub">© <span id="year"></span> SmartFarm — Todos os direitos reservados. <span class="l-muted">LGPD: tratamos somente os dados necessários para contato e proposta.</span></div>
   </footer>
 
+  <!-- ===== MODAL (LIGHTBOX) ===== -->
+  <dialog id="imgModal" aria-label="Imagem ampliada">
+    <button id="closeModal" aria-label="Fechar">✕</button>
+    <img id="modalImg" alt="Prévia do painel" />
+  </dialog>
+
   <script>
     // ano
     document.getElementById('year').textContent = new Date().getFullYear();
@@ -250,7 +256,6 @@
     const form = document.getElementById('leadForm');
     const msg = document.getElementById('mensagemForm');
 
-    // pequena validação de campos obrigatórios (não altera estética)
     function camposValidos(data){
       if(!data.nome || !data.email || !data.telefone || !document.getElementById('aceite').checked){
         return false;
@@ -287,9 +292,52 @@
         msg.classList.remove('ok');
       }
     });
+
+    // ===== LIGHTBOX para .l-screen =====
+    const screens = document.querySelectorAll('.l-screen');
+    const modal   = document.getElementById('imgModal');
+    const modalImg= document.getElementById('modalImg');
+    const closeBt = document.getElementById('closeModal');
+
+    function getBgUrl(el){
+      // Preferir data-img; se não tiver, extrai de background-image
+      if(el.dataset.img) return el.dataset.img;
+      const bg = getComputedStyle(el).backgroundImage; // url(".../painelX.png")
+      const m = bg && bg.match(/url\(["']?(.*?)["']?\)/);
+      return m ? m[1] : "";
+    }
+
+    function openModal(src){
+      if(!src) return;
+      modalImg.src = src;
+      modal.showModal();
+      document.body.style.overflow = 'hidden'; // evita scroll da página
+    }
+    function closeModal(){
+      modal.close();
+      document.body.style.overflow = '';
+    }
+
+    screens.forEach(el=>{
+      el.setAttribute('tabindex','0'); // acessível: foco/Enter
+      el.addEventListener('click', ()=> openModal(getBgUrl(el)));
+      el.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openModal(getBgUrl(el));
+        }
+      });
+    });
+
+    closeBt.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e)=>{
+      if(e.target === modal) closeModal(); // clique fora fecha
+    });
+    modal.addEventListener('close', ()=> document.body.style.overflow = '');
   </script>
+
   <a href="https://wa.me/5511934901476?text=Oi! Quero SmartFarm. Minha cultura: __ ; Área: __ ha"
-   class="whatsapp-bolha" target="_blank" rel="noopener" aria-label="Falar no WhatsApp"></a>
+     class="whatsapp-bolha" target="_blank" rel="noopener" aria-label="Falar no WhatsApp"></a>
 
 </body>
 </html>
