@@ -423,3 +423,19 @@ body.landing{
   background-image: url("painel.png");
   background-size: cover; background-position: center;
 }
+
+.whatsapp-bolha {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 64px;
+  height: 64px;
+  background: #25D366 url('https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/whatsapp.svg') no-repeat center/60%;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  z-index: 999;
+  transition: transform 0.2s ease;
+}
+.whatsapp-bolha:hover {
+  transform: scale(1.1);
+}
